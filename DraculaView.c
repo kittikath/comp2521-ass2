@@ -53,7 +53,7 @@ void DvFree(DraculaView dv)
 Round DvGetRound(DraculaView dv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	return GvGetRound;
 }
 
 int DvGetScore(DraculaView dv)
