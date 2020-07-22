@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "Game.h"
 #include "GameView.h"
@@ -22,9 +23,22 @@
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
+typedef struct playerView {
+	Player player;
+    int health;
+	int score;
+} PlayerView;
+
+
 struct gameView {
 	// TODO: ADD FIELDS HERE
+	Round round;
+	PlayerView p[NUM_PLAYERS];
+	int score;
+	char *pastPlays;
+	Message messages[];
 };
+
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -37,7 +51,26 @@ GameView GvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
+	
+	new->score = GAME_START_SCORE;
+	new->round = (strlen(pastPlays)+1)/40;
+	printf("round %d\n", new->round);
+	new->pastPlays = pastPlays;
+	printf("plays %s\n", new->pastPlays);
 
+	//     ------ MESSAGES IS NOT WORKING -------
+	// error: assignment to expression with array type
+	// for(int j = 0; j < new->round*5; j++){
+	// 	new->messages[j] = messages[j];
+
+	// 	printf("%s messages\n", new->messages[j]);
+	// }
+	
+	for(int i = 0; i < NUM_PLAYERS; i++){
+		new->p[i].player = i;
+		printf("%d  hello\n",new->p[i].player);
+	}
+	
 	return new;
 }
 
@@ -53,19 +86,21 @@ void GvFree(GameView gv)
 Round GvGetRound(GameView gv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	return gv->round;
 }
 
 Player GvGetPlayer(GameView gv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return PLAYER_LORD_GODALMING;
+	// return PLAYER_LORD_GODALMING;
+	return gv->p->player;
 }
 
 int GvGetScore(GameView gv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	// return 0;
+	return gv->score ;
 }
 
 int GvGetHealth(GameView gv, Player player)
