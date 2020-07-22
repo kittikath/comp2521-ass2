@@ -78,7 +78,7 @@ It may be easier to make a new branch from the terminal.
 Make sure you are in the root directory of the repository, on the master branch.
 
 ````
-$ git checkout -b WEA-[NEXT NUMBER] - [new-feature-branch]
+$ git checkout -b [new branch name]-[NEXT NUMBER] - [new-feature-branch]
 ````
 
 The first time you push the new branch, use
