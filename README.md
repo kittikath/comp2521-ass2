@@ -6,7 +6,7 @@ Team Name: darwin-james-jon-kath
 | --------------- | ------------- | -------- | ------------- |
 |     kittikath   | Kath-Lin Han  | z5165314 |    T15B       |
 |    chowdermaid  | Darwin Chow   | z5219882 |    W13B       |
-|                 |               |          |               |
+|     jjsnack     | James Jiang   | z5206109 |    H13B       |
 |                 |               |          |               |
 |                 |               |          |               |
 |                 |               |          |               |
