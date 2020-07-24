@@ -26,16 +26,17 @@
 typedef struct playerDetails {
 	int playerID;
    	int health;
-} PlayerD;
+} Player;
 
 
 struct gameView {
 	// TODO: ADD FIELDS HERE
 	Round round;
-	PlayerD PlayerDetails[NUM_PLAYERS];
+	Player PlayerDetails[NUM_PLAYERS];
 	int score;
 	char *pastPlays;
 	Message messages[];
+	int currentPlayer;
 };
 
 
@@ -95,7 +96,7 @@ void GvFree(GameView gv)
 
 Round GvGetRound(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE!
 	return gv->round;
 }
 
@@ -103,13 +104,12 @@ Player GvGetPlayer(GameView gv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	// return PLAYER_LORD_GODALMING;
-	return 0;
+	return gv->playerDetails[currentPlayer];
 }
 
 int GvGetScore(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// return 0;
+	// TODO: DONE!
 	return gv->score ;
 }
 
