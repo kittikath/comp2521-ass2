@@ -21,6 +21,9 @@
 #include "Places.h"
 // add your own #includes here
 
+#define TRUE 1
+#define FALSE 0
+
 // TODO: ADD YOUR OWN STRUCTS HERE
 
 typedef struct playerinfo {
@@ -38,10 +41,11 @@ struct gameView {
 	// TODO: ADD FIELDS HERE - added a few
 	Round round;
 	PlayerInfo playerInfo[NUM_PLAYERS];
+	Vampire vampire;
 	int score;
 	char *pastPlays;
 	Message messages[];
-	Vampire vampire;
+	
 };
 
 
@@ -93,9 +97,9 @@ GameView GvNew(char *pastPlays, Message messages[])
 	}
 	
 	// for the vampire;
-	new->vampire->exist = FALSE;
-	new->vampire->place = NOWHERE;
-	new->vampire->roundSpawned = 0;
+	new->vampire.exist = FALSE;
+	new->vampire.place = NOWHERE;
+	new->vampire.roundSpawned = 0;
 
 	return new;
 }
@@ -152,7 +156,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 PlaceId GvGetVampireLocation(GameView gv)
 {
 	// TODO: DONE!
-	return gv->vampire->exist == TRUE ? gv->vampire->place : NOWHERE;
+	return gv->vampire.exist == TRUE ? gv->vampire.place : NOWHERE;
 }
 
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
