@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "DraculaView.h"
 #include "Game.h"
@@ -20,15 +21,32 @@
 #include "Map.h"
 // add your own #includes here
 
+#define TRUE 1
+#define FALSE 0
+
 // TODO: ADD YOUR OWN STRUCTS HERE
+
+typedef struct vampire {
+    bool exist;
+    PlaceId place;
+    Round roundSpawned;
+} Vampire;
+
+typedef struct trap {
+    int count;
+} Trap;
 
 struct draculaView {
 	// TODO: ADD FIELDS HERE
+	GameView gameView;
+	Vampire vampire;
+	Trap trap;
 };
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
 
+// initialise traps and vampires
 DraculaView DvNew(char *pastPlays, Message messages[])
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
@@ -37,6 +55,27 @@ DraculaView DvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate DraculaView\n");
 		exit(EXIT_FAILURE);
 	}
+
+	int i;
+	// initialise gameview in drac view
+	new->gameView = GvNew(pastPlays, messages);
+
+	// if game is in initial state
+	if (strlen(pastPlays) == 0) {
+		new->vampire.exist = FALSE;
+		new->vampire.place = NOWHERE;
+		new->vampire.roundSpawned = 0;
+
+		new->trap.count = 0;
+
+		return new;
+	}
+	// dracula turn NOT FINISHED
+	else {
+		int turn = 1;
+		if (pastPlays[turn] == )
+	}
+
 
 	return new;
 }
@@ -52,39 +91,40 @@ void DvFree(DraculaView dv)
 
 Round DvGetRound(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return GvGetRound;
+	// TODO: DONE
+	return GvGetRound(dv->gameView);
 }
 
 int DvGetScore(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	// TODO: DONE
+	return GvGetScore(dv->gameView);
 }
 
 int DvGetHealth(DraculaView dv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	// TODO: DONE
+	return GvGetHealth(dv->gameView, player);
 }
 
 PlaceId DvGetPlayerLocation(DraculaView dv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	// TODO: DONE
+	return GvGetPlayerLocation(dv->gameView, player);
 }
 
 PlaceId DvGetVampireLocation(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	// TODO: DONE
+	return GvGetVampireLocation(dv->gameView);
 }
 
 PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE
+
 	*numTraps = 0;
-	return NULL;
+	return;
 }
 
 ////////////////////////////////////////////////////////////////////////
