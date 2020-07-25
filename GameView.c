@@ -28,6 +28,11 @@ typedef struct playerinfo {
    	int health;
 } PlayerInfo;
 
+typedef struct vampire {
+    bool exist;
+    PlaceId place;
+    Round roundSpawned;
+} Vampire;
 
 struct gameView {
 	// TODO: ADD FIELDS HERE - added a few
@@ -36,6 +41,7 @@ struct gameView {
 	int score;
 	char *pastPlays;
 	Message messages[];
+	Vampire vampire;
 };
 
 
@@ -85,6 +91,11 @@ GameView GvNew(char *pastPlays, Message messages[])
 		}
 		printf("health = %d\n", new->playerInfo[i].health);
 	}
+	
+	// for the vampire;
+	new->vampire->exist = FALSE;
+	new->vampire->place = NOWHERE;
+	new->vampire->roundSpawned = 0;
 
 	return new;
 }
@@ -140,8 +151,8 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 
 PlaceId GvGetVampireLocation(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	// TODO: DONE!
+	return gv->vampire->exist == TRUE ? gv->vampire->place : NOWHERE;
 }
 
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
@@ -157,10 +168,11 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: done but not tested
     *canFree = false;
     
 	*numReturnedMoves = gv->round;
+	// if player made a move within the round, extra 
 	if (GvGetPlayer(gv) < player) {
 	    numReturnedMoves++;
     }
@@ -170,7 +182,6 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
     char *string = strdup(gv->pastPlays);
     char delim[] = " ";
     char *move;
-    
     
     int i = 0;
     int j = 0;
