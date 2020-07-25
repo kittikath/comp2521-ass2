@@ -52,7 +52,7 @@ struct gameView {
 // helper functions
 
 //char *getCurrentTurn(char *pastPlays);
-PlaceId getPlaceId(char move);
+char *getPlayerMove(char *pastPlays, Player player, Round round);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -117,12 +117,15 @@ Round GvGetRound(GameView gv)
 {
 	// TODO: DONE!
 	return gv->round;
+	// or
+	// return strlen(gv->pastPlays) + 1) / 8;
 }
 
 Player GvGetPlayer(GameView gv)
 {
 	// TODO: DONE!
 	int currentPlayer = ((strlen(gv->pastPlays) + 1) / 8) % NUM_PLAYERS;
+	// maybe could just return the number right away
 	return gv->playerInfo[currentPlayer].player;
 }
 
@@ -183,22 +186,11 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 	
 	PlaceId *moveHistory = malloc(*numReturnedMoves * sizeof(*moveHistory));
 	
-    char *string = strdup(gv->pastPlays);
-    char delim[] = " ";
-    char *move;
-    
-    int i = 0;
-    int j = 0;
-    move = strtok(string, delim);
-    while (move != NULL) {
-        if (i % NUM_PLAYERS == player) {
-            char *abbrev = strndup(move + 1, 2);
-            moveHistory[j] = placeAbbrevToId(abbrev);
-            j++;
-        }
-        move = strtok(NULL, delim);
-        i++;
-    }
+	for (int i = 0; i <= *numReturnedMoves; i++) {
+	    char *move = getPlayerMove(gv->pastPlays, player, i);
+	    char *abbrev = strndup(move + 1, 2);
+	    moveHistory[i] = placeAbbrevToId(abbrev);
+	}
     
 	return moveHistory;
 }
@@ -258,9 +250,31 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 // helper function definitions:
 
-// returns the last line of the pastPlays string
+// returns the last move from pastPlays string
 char *getCurrentTurn(char *pastPlays)
 {
     char *currentTurn = strchr(pastPlays, '\n');    
     return currentTurn == NULL ? pastPlays : currentTurn + 1;
+}
+
+// returns the string containing a player's move in a given round
+char *getPlayerMove(char *pastPlays, Player player, Round round)
+{
+    // if requested round has not been played
+    // or if player has not made a move in the requested round
+    int currentRound = (strlen(pastPlays) + 1) / 8;    
+    assert(round <= currentRound || ((strlen(pastPlays) + 1) / 8) % 5 > player);
+    
+    char *string = strdup(pastPlays);
+    char delim[] = " ";
+    char *move;
+    
+    // the number of times strtok tokenises
+    int limit = round * NUM_PLAYERS + player;
+    
+    move = strtok(string, delim);
+    for (int i = 0; i < limit && move != NULL; i++) {        
+        move = strtok(NULL, delim);
+    }
+    return move;
 }
