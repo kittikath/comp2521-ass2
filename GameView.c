@@ -30,13 +30,13 @@ typedef struct playerDetails {
 
 
 struct gameView {
-	// TODO: ADD FIELDS HERE
+	// TODO: ADD FIELDS HERE - added a few
 	Round round;
 	Player PlayerDetails[NUM_PLAYERS];
 	int score;
 	char *pastPlays;
 	Message messages[];
-	int currentPlayer;
+	int currentPlayer; // every time a player has made a move, this should be incremented
 };
 
 
@@ -51,9 +51,10 @@ GameView GvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
-   
+
 	new->score = GAME_START_SCORE;
-	new->round = (strlen(pastPlays)+1)/40;
+	//new->round = (strlen(pastPlays)+1)/40;
+	new->round = strlen(pastPlays)/40; // don't think the +1 is needed
 	printf("round %d\n", new->round);
 	new->pastPlays = pastPlays;
 	printf("plays %s\n", new->pastPlays);
@@ -67,9 +68,9 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// }
 	
 	// initialise health and other stats
-	// only has health rn
+	// only has health right now
 	for (int i = 0; i < NUM_PLAYERS; i++) {
-		// sets playerid
+		// sets playerID
 		new->PlayerDetails[i].playerID = i;
 		// for dracula
 		if (i == PLAYER_DRACULA) {
@@ -102,9 +103,8 @@ Round GvGetRound(GameView gv)
 
 Player GvGetPlayer(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// return PLAYER_LORD_GODALMING;
-	return gv->playerDetails[currentPlayer];
+	// TODO: DONE!
+	return gv->playerDetails[currentPlayer % NUM_PLAYERS].playerID;
 }
 
 int GvGetScore(GameView gv)
