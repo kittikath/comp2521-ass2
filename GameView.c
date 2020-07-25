@@ -26,6 +26,7 @@
 typedef struct playerInfo {
 	Player player;
    	int health;
+   	
 };
 
 
@@ -57,8 +58,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 	}
 
 	new->score = GAME_START_SCORE;
-	//new->round = (strlen(pastPlays)+1)/40;
-	new->round = strlen(pastPlays)/40; // don't think the +1 is needed
+	new->round = (strlen(pastPlays)+1)/40;
 	printf("round %d\n", new->round);
 	new->pastPlays = pastPlays;
 	printf("plays %s\n", new->pastPlays);
@@ -92,7 +92,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 
 void GvFree(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: do we need to free pastPlays and messages?
 	free(gv);
 }
 
@@ -107,9 +107,8 @@ Round GvGetRound(GameView gv)
 
 Player GvGetPlayer(GameView gv)
 {
-	// TODO: DONE! could fix so there isn't an extra field in GameView
-	char *currentTurn = getCurrentTurn(gv->pastPlays);
-	int currentPlayer = ((strlen(currentTurn) + 1) / 8) % NUM_PLAYERS;
+	// TODO: DONE!
+	int currentPlayer = ((strlen(pastPlays) + 1) / 8) % NUM_PLAYERS;
 	return gv->playerInfo[currentPlayer].player;
 }
 
@@ -129,12 +128,14 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	
+	// before given player has made their play
 	if (GvGetPlayer(gv) <= player) {
 	    return NOWHERE;
 	}
 
 	char *currentTurn = getCurrentTurn(gv->pastPlays);
 	
+	// not complete
 	return NOWHERE;
 }
 
@@ -221,7 +222,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 // returns the last line of the pastPlays string
 char *getCurrentTurn(char *pastPlays)
 {
-    char *currentTurn = strchr(pastPlays, '\n');
-    
+    char *currentTurn = strchr(pastPlays, '\n');    
     return currentTurn == NULL ? pastPlays : currentTurn + 1;
 }
