@@ -23,11 +23,10 @@
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
-typedef struct playerInfo {
+typedef struct playerinfo {
 	Player player;
    	int health;
-   	
-};
+} PlayerInfo;
 
 
 struct gameView {
@@ -42,8 +41,8 @@ struct gameView {
 
 // helper functions
 
-char *getCurrentTurn(char *pastPlays)
-
+//char *getCurrentTurn(char *pastPlays);
+PlaceId getPlaceId(char move);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -84,7 +83,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 		else {
 			new->playerInfo[i].health = GAME_START_HUNTER_LIFE_POINTS;
 		}
-		printf("health = %d\n", new->PlayerInfo[i].health);
+		printf("health = %d\n", new->playerInfo[i].health);
 	}
 
 	return new;
@@ -108,7 +107,7 @@ Round GvGetRound(GameView gv)
 Player GvGetPlayer(GameView gv)
 {
 	// TODO: DONE!
-	int currentPlayer = ((strlen(pastPlays) + 1) / 8) % NUM_PLAYERS;
+	int currentPlayer = ((strlen(gv->pastPlays) + 1) / 8) % NUM_PLAYERS;
 	return gv->playerInfo[currentPlayer].player;
 }
 
@@ -133,7 +132,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 	    return NOWHERE;
 	}
 
-	char *currentTurn = getCurrentTurn(gv->pastPlays);
+	//char *currentTurn = getCurrentTurn(gv->pastPlays);
 	
 	// not complete
 	return NOWHERE;
@@ -159,9 +158,34 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedMoves = 0;
-	*canFree = false;
-	return NULL;
+    *canFree = false;
+    
+	*numReturnedMoves = gv->round;
+	if (GvGetPlayer(gv) < player) {
+	    numReturnedMoves++;
+    }
+	
+	PlaceId *moveHistory = malloc(*numReturnedMoves * sizeof(*moveHistory));
+	
+    char *string = strdup(gv->pastPlays);
+    char delim[] = " ";
+    char *move;
+    
+    
+    int i = 0;
+    int j = 0;
+    move = strtok(string, delim);
+    while (move != NULL) {
+        if (i % NUM_PLAYERS == player) {
+            char *abbrev = strndup(move + 1, 2);
+            moveHistory[j] = placeAbbrevToId(abbrev);
+            j++;
+        }
+        move = strtok(NULL, delim);
+        i++;
+    }
+    
+	return moveHistory;
 }
 
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
