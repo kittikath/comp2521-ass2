@@ -26,6 +26,8 @@
 typedef struct playerInfo {
 	Player player;
    	int health;
+   	PlaceId current;
+   	PlaceId next;
 };
 
 
@@ -38,6 +40,11 @@ struct gameView {
 	Message messages[];
 	int currentPlayer; // every time a player has made a move, this should be incremented
 };
+
+
+// helper functions
+
+char *getCurrentTurn(char *pastPlays)
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -103,7 +110,7 @@ Round GvGetRound(GameView gv)
 
 Player GvGetPlayer(GameView gv)
 {
-	// TODO: DONE!
+	// TODO: DONE! could fix so there isn't an extra field in GameView
 	return gv->playerInfo[currentPlayer % NUM_PLAYERS].player;
 }
 
@@ -115,13 +122,16 @@ int GvGetScore(GameView gv)
 
 int GvGetHealth(GameView gv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	// TODO: DONE!
+	return gv->playerInfo[player].health;
 }
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	
+	
+	
 	return NOWHERE;
 }
 
@@ -200,4 +210,15 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
-// TODO
+// TODO:
+
+
+// helper function definitions:
+
+// returns the last line of the pastPlays string
+char *getCurrentTurn(char *pastPlays)
+{
+    char *currentTurn = strchr(pastPlays, '\n');
+    
+    currentTurn == NULL ? return pastPlays : return currentTurn + 1;
+}
