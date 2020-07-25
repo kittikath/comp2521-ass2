@@ -220,5 +220,5 @@ char *getCurrentTurn(char *pastPlays)
 {
     char *currentTurn = strchr(pastPlays, '\n');
     
-    currentTurn == NULL ? return pastPlays : return currentTurn + 1;
+    return currentTurn == NULL ? pastPlays : currentTurn + 1;
 }
