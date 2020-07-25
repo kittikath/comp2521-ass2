@@ -175,8 +175,8 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 	// TODO: done but not tested
     *canFree = false;
     
-	*numReturnedMoves = gv->round;
-	// if player made a move within the round, extra 
+	*numReturnedMoves = gv->round - 1;
+	// if player made a move during the current round
 	if (GvGetPlayer(gv) < player) {
 	    numReturnedMoves++;
     }
