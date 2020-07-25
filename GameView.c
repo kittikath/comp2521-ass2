@@ -23,16 +23,16 @@
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
-typedef struct playerDetails {
-	int playerID;
+typedef struct playerInfo {
+	Player player;
    	int health;
-} Player;
+};
 
 
 struct gameView {
 	// TODO: ADD FIELDS HERE - added a few
 	Round round;
-	Player PlayerDetails[NUM_PLAYERS];
+	PlayerInfo playerInfo[NUM_PLAYERS];
 	int score;
 	char *pastPlays;
 	Message messages[];
@@ -70,17 +70,17 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// initialise health and other stats
 	// only has health right now
 	for (int i = 0; i < NUM_PLAYERS; i++) {
-		// sets playerID
-		new->PlayerDetails[i].playerID = i;
+		// sets player
+		new->playerInfo[i].player = i;
 		// for dracula
 		if (i == PLAYER_DRACULA) {
-			new->PlayerDetails[i].health = GAME_START_BLOOD_POINTS;
+			new->playerInfo[i].health = GAME_START_BLOOD_POINTS;
 		}
 		// for hunters
 		else {
-			new->PlayerDetails[i].health = GAME_START_HUNTER_LIFE_POINTS;
+			new->playerInfo[i].health = GAME_START_HUNTER_LIFE_POINTS;
 		}
-		printf("health = %d\n", new->PlayerDetails[i].health);
+		printf("health = %d\n", new->PlayerInfo[i].health);
 	}
 
 	return new;
@@ -104,7 +104,7 @@ Round GvGetRound(GameView gv)
 Player GvGetPlayer(GameView gv)
 {
 	// TODO: DONE!
-	return gv->playerDetails[currentPlayer % NUM_PLAYERS].playerID;
+	return gv->playerInfo[currentPlayer % NUM_PLAYERS].player;
 }
 
 int GvGetScore(GameView gv)
