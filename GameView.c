@@ -178,30 +178,58 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 	// TODO: done but not tested
     *canFree = false;
     
-	*numReturnedMoves = gv->round - 1;
+	int numAllMoves = gv->round - 1;
 	// if player made a move during the current round
 	if (GvGetPlayer(gv) < player) {
-	    numReturnedMoves++;
+	    numAllMoves++;
     }
 	
-	PlaceId *moveHistory = malloc(*numReturnedMoves * sizeof(*moveHistory));
+	PlaceId *moveHistory = malloc(numAllMoves * sizeof(*moveHistory));
 	
-	for (int i = 0; i <= *numReturnedMoves; i++) {
+	// finding moves and adding it to the array
+	for (int i = 0; i < numAllMoves; i++) {
 	    char *move = getPlayerMove(gv->pastPlays, player, i);
 	    char *abbrev = strndup(move + 1, 2);
 	    moveHistory[i] = placeAbbrevToId(abbrev);
 	}
-    
+	
+	*numReturnedMoves = numAllMoves;
 	return moveHistory;
 }
 
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedMoves = 0;
+	// TODO: logic at fault
 	*canFree = false;
-	return NULL;
+
+	int numAllMoves = gv->round - 1;
+	// if player made a move during the current round
+	if (GvGetPlayer(gv) < player) {
+	    numAllMoves++;
+    }
+    
+    int numLastMoves;
+    // setting the number of last moves available
+    if (numAllMoves > numMoves) {
+        numLastMoves = numMoves;
+    } else {
+        numLastMoves = numAllMoves;
+    }
+	
+	PlaceId *moveHistory = malloc(numLastMoves * sizeof(*moveHistory));
+	
+	// finding moves and adding it to the array
+	int j = 0;
+	for (int i = numAllMoves - numLastMoves; i < numAllMoves; i++) {
+	    char *move = getPlayerMove(gv->pastPlays, player, i);
+	    char *abbrev = strndup(move + 1, 2);
+	    moveHistory[j] = placeAbbrevToId(abbrev);
+	    j++;
+	}
+	
+	*numReturnedMoves = numLastMoves;
+	return moveHistory;
 }
 
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
