@@ -125,28 +125,25 @@ void GvFree(GameView gv)
 Round GvGetRound(GameView gv)
 {
 	// TODO: DONE!
-	return gv->round;
-	// or
-	// return strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS);
+	return (strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS);
 }
 
 Player GvGetPlayer(GameView gv)
 {
 	// TODO: DONE!
 	int currentPlayer = ((strlen(gv->pastPlays) + 1) / 8) % NUM_PLAYERS;
-	// maybe could just return the number right away
-	return gv->playerInfo[currentPlayer].player;
+	return currentPlayer;
 }
 
 int GvGetScore(GameView gv)
 {
-	// TODO: DONE!
+	// TODO: needs to be fixed
 	return gv->score;
 }
 
 int GvGetHealth(GameView gv, Player player)
 {
-	// TODO: DONE!
+	// TODO: needs to be fixed
 	return gv->playerInfo[player].health;
 }
 
