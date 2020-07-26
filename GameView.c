@@ -51,12 +51,17 @@ struct gameView {
 
 // helper functions
 
-//char *getCurrentTurn(char *pastPlays);
 char *getPlayerMove(char *pastPlays, Player player, Round round);
 bool placeMatch(char *pastPlays, Player player, PlaceId Place,
                 Round roundStart, Round roundEnd);
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
+
+
+PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
+                                   int *numReturned);
+PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
+                                int *numReturned);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -181,60 +186,32 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested; this needs fixing for dracula
+	//       going to make this a wrapper function
     *canFree = false;
     
-	int numAllMoves = gv->round - 1;
-	// if player made a move during the current round
-	if (GvGetPlayer(gv) < player) {
-	    numAllMoves++;
+    if (player != PLAYER_DRACULA) {
+        // numReturnedMoves might need to get passed as a pointer to the pointer
+        return HunterMoveLocationHistory(gv, player, numReturnedMoves);
+    } else {
+        // TODO: FOR DRACULA!!
+        return NULL;
     }
-	
-	PlaceId *moveHistory = malloc(numAllMoves * sizeof(*moveHistory));
-	
-	// finding moves and adding it to the array
-	for (int i = 0; i < numAllMoves; i++) {
-	    char *move = getPlayerMove(gv->pastPlays, player, i);
-	    char *abbrev = strndup(move + 1, 2);
-	    moveHistory[i] = placeAbbrevToId(abbrev);
-	}
-	
-	*numReturnedMoves = numAllMoves;
-	return moveHistory;
 }
 
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested; this needs fixing for dracula
+	//       going to make this a wrapper function
 	*canFree = false;
-
-	int numAllMoves = gv->round - 1;
-	// if player made a move during the current round
-	if (GvGetPlayer(gv) < player) {
-	    numAllMoves++;
-    }
     
-    int numLastMoves;
-    // setting the number of last moves available
-    if (numAllMoves > numMoves) {
-        numLastMoves = numMoves;
+    if (player != PLAYER_DRACULA) {
+        // numReturnedMoves might need to get passed as a pointer to the pointer
+        return HunterLastMoveLocation(gv, player, numMoves, numReturnedMoves);
     } else {
-        numLastMoves = numAllMoves;
+        // TODO: FOR DRACULA!!
+        return NULL;
     }
-	
-	PlaceId *moveHistory = malloc(numLastMoves * sizeof(*moveHistory));
-	
-	// finding moves and adding it to the array
-	int j = 0;
-	for (int i = numAllMoves - numLastMoves; i < numAllMoves; i++) {
-	    char *move = getPlayerMove(gv->pastPlays, player, i);
-	    char *abbrev = strndup(move + 1, 2);
-	    moveHistory[j] = placeAbbrevToId(abbrev);
-	    j++;
-	}
-	
-	*numReturnedMoves = numLastMoves;
-	return moveHistory;
 }
 
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
@@ -282,15 +259,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 
 // helper function definitions:
-
-/*
-// returns the last move from pastPlays string
-char *getCurrentTurn(char *pastPlays)
-{
-    char *currentTurn = strchr(pastPlays, '\n');    
-    return currentTurn == NULL ? pastPlays : currentTurn + 1;
-}
-*/
 
 // returns the string containing a player's move in a given round
 char *getPlayerMove(char *pastPlays, Player player, Round round)
@@ -397,4 +365,66 @@ Round placeBeenL(char *pastPlays, Player player, PlaceId place)
         move = strtok(NULL, delim);
     }
     return last / NUM_PLAYERS;
+}
+
+
+// -----------------------------------------------------------------------------
+
+// helper function to find hunter move and location history
+PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
+                                   int *numReturned)
+{
+    // TODO: should be working
+	int numHistory = gv->round - 1;
+	// if player made a move during the current round
+	if (GvGetPlayer(gv) > player) {
+	    numHistory++;
+    }
+	
+	PlaceId *history = malloc(numHistory * sizeof(*history));
+	
+	// finding moves and adding it to the array
+	for (int i = 0; i < numHistory; i++) {
+	    char *move = getPlayerMove(gv->pastPlays, player, i);
+	    char *abbrev = strndup(move + 1, 2);
+	    history[i] = placeAbbrevToId(abbrev);
+	}
+	
+	*numReturned = numHistory;
+	return history;
+}
+
+
+// helper function to find n last hunder move and location history
+PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
+                                int *numReturned)
+{
+    // TODO: should be working
+	int numHistory = gv->round - 1;
+	// if player made a move during the current round
+	if (GvGetPlayer(gv) > player) {
+	    numHistory++;
+    }
+    
+    int numLast;
+    // setting the number of last moves available
+    if (numHistory > num) {
+        numLast = num;
+    } else {
+        numLast = numHistory;
+    }
+	
+	PlaceId *last = malloc(numLast * sizeof(*last));
+	
+	// finding moves and adding it to the array
+	int j = 0;
+	for (int i = numHistory - numLast; i < numHistory; i++) {
+	    char *move = getPlayerMove(gv->pastPlays, player, i);
+	    char *abbrev = strndup(move + 1, 2);
+	    last[j] = placeAbbrevToId(abbrev);
+	    j++;
+	}
+	
+	*numReturned = numLast;
+	return last;
 }
