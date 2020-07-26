@@ -218,18 +218,33 @@ PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
 	// TODO: this is pretty much already done as above
-	*numReturnedLocs = 0;
+	//       this is a wrapper function
 	*canFree = false;
-	return NULL;
+	
+    if (player != PLAYER_DRACULA) {
+        // numReturnedLocs might need to get passed as a pointer to the pointer
+        return HunterMoveLocationHistory(gv, player, numReturnedLocs);
+    } else {
+        // TODO: FOR DRACULA!!
+        return NULL;
+    }
+
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
 	// TODO: this is pretty much already done as above
-	*numReturnedLocs = 0;
+	//       this is a wrapper function
 	*canFree = false;
-	return 0;
+	
+    if (player != PLAYER_DRACULA) {
+        // numReturnedLocs might need to get passed as a pointer to the pointer
+        return HunterLastMoveLocation(gv, player, numLocs, numReturnedLocs);
+    } else {
+        // TODO: FOR DRACULA!!
+        return NULL;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
