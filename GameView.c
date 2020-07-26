@@ -26,26 +26,10 @@
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
-typedef struct playerinfo {
-	Player player;
-   	int health;
-} PlayerInfo;
-
-typedef struct vampire {
-    bool exist;
-    PlaceId place;
-    Round roundSpawned;
-} Vampire;
-
 struct gameView {
 	// TODO: ADD FIELDS HERE - added a few
-	Round round;
-	PlayerInfo playerInfo[NUM_PLAYERS];
-	Vampire vampire;
-	int score;
 	char *pastPlays;
-	Message messages[];
-	
+	Message *messages;
 };
 
 
@@ -74,42 +58,11 @@ GameView GvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
-
-	new->score = GAME_START_SCORE;
-	new->round = (strlen(pastPlays)+1)/40;
-	printf("round %d\n", new->round);
+	
 	new->pastPlays = pastPlays;
-	printf("plays %s\n", new->pastPlays);
-
-	//     ------ MESSAGES IS NOT WORKING -------
-	// error: assignment to expression with array type
-	// for(int j = 0; j < new->round*5; j++){
-	// 	new->messages[j] = messages[j];
-
-	// 	printf("%s messages\n", new->messages[j]);
-	// }
+	new->messages = messages;
+	//printf("%s messages\n", new->messages[1]);
 	
-	// initialise health and other stats
-	// only has health right now
-	for (int i = 0; i < NUM_PLAYERS; i++) {
-		// sets player
-		new->playerInfo[i].player = i;
-		// for dracula
-		if (i == PLAYER_DRACULA) {
-			new->playerInfo[i].health = GAME_START_BLOOD_POINTS;
-		}
-		// for hunters
-		else {
-			new->playerInfo[i].health = GAME_START_HUNTER_LIFE_POINTS;
-		}
-		printf("health = %d\n", new->playerInfo[i].health);
-	}
-	
-	// for the vampire;
-	new->vampire.exist = FALSE;
-	new->vampire.place = NOWHERE;
-	new->vampire.roundSpawned = 0;
-
 	return new;
 }
 
@@ -138,13 +91,21 @@ Player GvGetPlayer(GameView gv)
 int GvGetScore(GameView gv)
 {
 	// TODO: needs to be fixed
-	return gv->score;
+	if (GvGetRound(gv) == 0) {
+	   return GAME_START_SCORE;
+   } else {
+      return GAME_START_SCORE - (SCORE_LOSS_DRACULA_TURN * GvGetRound(gv));
+   }
 }
 
 int GvGetHealth(GameView gv, Player player)
 {
 	// TODO: needs to be fixed
-	return gv->playerInfo[player].health;
+	if (player != PLAYER_DRACULA) {
+	   return GAME_START_HUNTER_LIFE_POINTS;
+   } else {
+      return GAME_START_BLOOD_POINTS;
+   }
 }
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
@@ -170,7 +131,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 PlaceId GvGetVampireLocation(GameView gv)
 {
 	// TODO: still needs considering
-	return gv->vampire.exist == TRUE ? gv->vampire.place : NOWHERE;
+	return NOWHERE;
 }
 
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
@@ -400,16 +361,16 @@ PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
 	int numHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
-	    numHistory--;
+      numHistory--;
     }
 	
 	PlaceId *history = malloc(numHistory * sizeof(*history));
 	
 	// finds move made every round and adds to array
 	for (int i = 0; i < numHistory; i++) {
-	    char *move = getPlayerMove(gv->pastPlays, player, i);
-	    char *abbrev = strndup(move + 1, 2);
-	    history[i] = placeAbbrevToId(abbrev);
+      char *move = getPlayerMove(gv->pastPlays, player, i);
+      char *abbrev = strndup(move + 1, 2);
+      history[i] = placeAbbrevToId(abbrev);
 	}
 	
 	*numReturned = numHistory;
@@ -425,8 +386,8 @@ PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
 	int numHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
-	    numHistory--;
-    }
+      numHistory--;
+   }
     
     int numLast;
     // setting the number of last moves available
