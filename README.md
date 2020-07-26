@@ -9,6 +9,4 @@ Team Name: darwin-james-jon-kath
 |     jjsnack     | James Jiang   | z5206109 |    H13B       |
 |     nojay-2     | Jon Luo       | z5209823 |    H13B       |
 |                 |               |          |               |
-|                 |               |          |               |
-|                 |               |          |               |
 |-----------------|---------------|----------|---------------|
