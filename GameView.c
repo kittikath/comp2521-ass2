@@ -53,6 +53,10 @@ struct gameView {
 
 //char *getCurrentTurn(char *pastPlays);
 char *getPlayerMove(char *pastPlays, Player player, Round round);
+bool placeMatch(char *pastPlays, Player player, PlaceId Place,
+                Round roundStart, Round roundEnd);
+Round placeBeenF(char *pastPlays, Player player, PlaceId place);
+Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -143,7 +147,8 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: should be done for hunters (by tonight); dracula still needs
+	//       considering
 	
 	// before given player has made their play
 	if (GvGetPlayer(gv) <= player) {
@@ -175,7 +180,7 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested
+	// TODO: done but not tested; this needs fixing for dracula
     *canFree = false;
     
 	int numAllMoves = gv->round - 1;
@@ -200,7 +205,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: logic at fault
+	// TODO: done but not tested; this needs fixing for dracula
 	*canFree = false;
 
 	int numAllMoves = gv->round - 1;
@@ -235,7 +240,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: this is pretty much already done as above
 	*numReturnedLocs = 0;
 	*canFree = false;
 	return NULL;
@@ -244,7 +249,7 @@ PlaceId *GvGetLocationHistory(GameView gv, Player player,
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: this is pretty much already done as above
 	*numReturnedLocs = 0;
 	*canFree = false;
 	return 0;
@@ -278,18 +283,23 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 // helper function definitions:
 
+/*
 // returns the last move from pastPlays string
 char *getCurrentTurn(char *pastPlays)
 {
     char *currentTurn = strchr(pastPlays, '\n');    
     return currentTurn == NULL ? pastPlays : currentTurn + 1;
 }
+*/
 
 // returns the string containing a player's move in a given round
 char *getPlayerMove(char *pastPlays, Player player, Round round)
 {
+    // TODO:
     // if requested round has not been played
     // or if player has not made a move in the requested round
+    // the assert could be removed it is causes an issue
+    // hopefully this function doesn't need to handle invalid cases
     int currentRound = (strlen(pastPlays) + 1) / 8;    
     assert(round <= currentRound || ((strlen(pastPlays) + 1) / 8) % 5 > player);
     
@@ -305,4 +315,86 @@ char *getPlayerMove(char *pastPlays, Player player, Round round)
         move = strtok(NULL, delim);
     }
     return move;
+}
+
+
+// the following functions could be implemented with thegetPlayerMove helper,
+// but would be a lot less efficient as a result
+
+// checks if a player has been to a certain place within the specified rounds
+bool placeMatch(char *pastPlays, Player player, PlaceId place,
+                Round roundStart, Round roundEnd)
+{
+    // TODO:  preliminary testing suggests it works, needs commenting
+    char *string = strdup(pastPlays);
+    char delim[] = " ";
+    char *move;
+    
+    int start = roundStart * NUM_PLAYERS + player;
+    int end = roundEnd * NUM_PLAYERS + player;
+    
+    move = strtok(string, delim);
+    for (int i = 0; i <= end && move != NULL; i++) {
+        if (i >= start && i % NUM_PLAYERS == player) {
+            char *abbrev = strndup(move + 1, 2);
+            if (place == placeAbbrevToId(abbrev)) {
+                return TRUE;
+            }
+        }
+        move = strtok(NULL, delim);
+    }
+    return FALSE;
+}
+
+
+// checks which round the player has been to a certain place, first occurence
+// returns -1 if player has not been to the place
+Round placeBeenF(char *pastPlays, Player player, PlaceId place)
+{
+    // TODO: preliminary testing suggests it works, needs commenting
+    char *string = strdup(pastPlays);
+    char delim[] = " ";
+    char *move;    
+
+    int currentRound = (strlen(pastPlays) + 1) / 8;
+    int limit = currentRound * NUM_PLAYERS + player;
+    
+    move = strtok(string, delim);
+    for (int i = 0; i <= limit && move != NULL; i++) {
+        if (i % NUM_PLAYERS == player) {
+            char *abbrev = strndup(move + 1, 2);
+            if (place == placeAbbrevToId(abbrev)) {
+                return i / NUM_PLAYERS;
+            }
+        }
+        move = strtok(NULL, delim);
+    }
+    return -1;
+}
+
+// checks which round the player has been to a certain place, last occurence
+// returns -1 if player has not been to the place
+Round placeBeenL(char *pastPlays, Player player, PlaceId place)
+{
+    // TODO: preliminary testing suggests it works, needs commenting
+    char *string = strdup(pastPlays);
+    char delim[] = " ";
+    char *move;    
+
+    int currentRound = (strlen(pastPlays) + 1) / 8;
+    int limit = currentRound * NUM_PLAYERS + player;
+    
+    Round last = -1;
+    
+    move = strtok(string, delim);
+    for (int i = 0; i <= limit && move != NULL; i++) {
+        if (i % NUM_PLAYERS == player) {
+            char *abbrev = strndup(move + 1, 2);
+            if (place == placeAbbrevToId(abbrev)) {
+                last = i;
+            }
+        }
+        move = strtok(NULL, delim);
+    }
+    return last / NUM_PLAYERS;
 }
