@@ -155,6 +155,21 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 	// TODO: should be done for hunters (by tonight); dracula still needs
 	//       considering
 	
+	if (player != PLAYER_DRACULA) {
+	    // player has made their move
+	    if (player < GvGetPlayer(gv)) {
+	        int currentRound = (strlen(gv->pastPlays) + 1) / 8;
+	        char *move = getPlayerMove(gv->pastPlays, player, currentRound);
+	        char *abbrev = strndup(move + 1, 2);
+            return placeAbbrevToId(abbrev);
+	    }
+	    return NOWHERE;
+	} else {
+	    // TODO: FOR DRACULA
+	    return NOWHERE;
+	}
+	
+	
 	// before given player has made their play
 	if (GvGetPlayer(gv) <= player) {
 	    return NOWHERE;
@@ -390,7 +405,7 @@ PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
                                    int *numReturned)
 {
     // TODO: should be working
-	int numHistory = gv->round - 1;
+	int numHistory = ((strlen(gv->pastPlays) + 1) / 8) - 1;
 	// if player made a move during the current round
 	if (GvGetPlayer(gv) > player) {
 	    numHistory++;
@@ -415,7 +430,7 @@ PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
                                 int *numReturned)
 {
     // TODO: should be working
-	int numHistory = gv->round - 1;
+	int numHistory = ((strlen(gv->pastPlays) + 1) / 8) - 1;
 	// if player made a move during the current round
 	if (GvGetPlayer(gv) > player) {
 	    numHistory++;
