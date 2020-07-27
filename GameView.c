@@ -22,13 +22,12 @@
 // add your own #includes here
 
 // TODO: ADD YOUR OWN STRUCTS HERE
-int calculateScore(GameView gv, enum player player);
+int calculateScore(GameView gv);
 static void calculateHealth(GameView gv, enum player player);
 bool isHunterDead(GameView gv, enum player player);
 
 struct gameView {
 	// TODO: ADD FIELDS HERE
-	int round;
 	int currentPlayer;
 	int score;
 	int location[NUM_REAL_PLACES];
@@ -54,6 +53,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 		for (i = 0; i < 3; i++) {
 			new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
 			printf("health of hunters: %d\n", new->health[i]);
+			new->location[i] = NOWHERE;
 		}
 		// for dracula
 		new->health[4] = GAME_START_BLOOD_POINTS;
@@ -65,6 +65,13 @@ GameView GvNew(char *pastPlays, Message messages[])
 	}
     
 	printf("pastPlays string is: %s\n", pastPlays);
+
+	for (i = 0; i < NUM_PLAYERS; i++) {
+		calculateHealth(new, i);
+		printf("player %d's health is: %d\n", i, new->health[i]);
+	}
+
+	printf("score is: %d\n", calculateScore(new));
 
 	return new;
 }
@@ -82,7 +89,7 @@ Round GvGetRound(GameView gv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	printf("gvgetround\n");
-	return gv->round;
+	return (strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS);
 }
 
 Player GvGetPlayer(GameView gv)
@@ -246,25 +253,34 @@ char *getCurrentMove(char *pastPlays, Player player, Round round)
 //}
 
 // calculates the score 
-int calculateScore(GameView gv, enum player player) {
+int calculateScore(GameView gv) {
 
 	int totalScore = GAME_START_SCORE;
-	int draculaTurn = 0, i = 0, vampCount = 0, huntCount = 0;;
+	int round = GvGetRound(gv);
+	int i, j;
+	int draculaTurn = 0, vampCount = 0, huntCount = 0;
 
 	// loop through all the rounds
-	for (i = 0; i < GAME_START_SCORE; i++) {
+	for (i = 0; i < round; i++) {
 		// if dracula's turn exists, increment
 		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			draculaTurn += SCORE_LOSS_DRACULA_TURN;
 		}
-		// if a hunter is dead, increment
-		if (isHunterDead(gv->health, player) == true) {
-			huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
+	}
+
+	// loop through all the rounds
+	for (i = 0; i < round; i++) {
+		// loop through all hunters
+		for (j = 0; j < 4; j++) {
+			// if hunter is found to be dead, increment
+			if (isHunterDead(gv, j) == true) {
+				huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
+			}
 		}
 	}
 
 	// for every round divisible by 13, check if vampire has matured
-	for (i = 0; i < GAME_START_SCORE; i = i + 13) {
+	for (i = 0; i < round; i = i + 13) {
 		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			// this should be "DC?T.V." .. etc
 			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
@@ -287,19 +303,21 @@ int calculateScore(GameView gv, enum player player) {
 	return totalScore;
 }
 
+// calculates the health of a player
 static void calculateHealth(GameView gv, enum player player) {
 	
-	int i, j;
+	int i;
+	int round = GvGetRound(gv);
 	char *curMove;
-	char *curLoc;
-	char *prevLoc;
+	PlaceId curLoc;
+	PlaceId prevLoc;
 	// hunters health
 	if (player != PLAYER_DRACULA) {
-		for (i = 0; i < GAME_START_SCORE; i++) {
+		for (i = 0; i < round; i++) {
 			// string of the whole player move, e.g "GMN.....""
 			curMove = getCurrentMove(gv->pastPlays, player, i);
 			// string of location, e.g "MN"
-			curLoc = GvGetPlayerLocation(gv->pastPlays, player);
+			curLoc = GvGetPlayerLocation(gv, player);
 
 			// encounter Dracula, lose 4 hp
 			if (curMove[4] == 'D') {
@@ -319,7 +337,7 @@ static void calculateHealth(GameView gv, enum player player) {
 					}
 				}
 				// health goes under 0, teleport to hospital
-				if (isHunterDead(gv->health, player) == true) {
+				if (isHunterDead(gv, player) == true) {
 					// if hunter is already in hospital, it means a new turn has started
 					if (curLoc == ST_JOSEPH_AND_ST_MARY) {
 						gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
@@ -327,7 +345,7 @@ static void calculateHealth(GameView gv, enum player player) {
 					gv->location[player] = ST_JOSEPH_AND_ST_MARY;
 				}
 			}
-			prevLoc = GvGetPlayerLocation(gv->pastPlays, player);
+			prevLoc = GvGetPlayerLocation(gv, player);
 		}
 	}
 }
@@ -339,9 +357,11 @@ bool isHunterDead(GameView gv, enum player player) {
 		if (gv->health[player] <= 0) {
 			return true;
 		}
-		else {
-			return false;
-		}
+		return false;
+	}
+	else {
+		return false;
+	}
 }
 
 // TODO
