@@ -21,8 +21,6 @@
 #include "Places.h"
 // add your own #includes here
 
-#define TRUE 1
-#define FALSE 0
 #define PLAY_LEN 8
 
 // TODO: ADD YOUR OWN STRUCTS HERE
@@ -129,10 +127,10 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
    // for dracula
    } else {
       int numLocs = 0;
-      bool canFree = TRUE;
+      bool canFree = true;
       PlaceId *draculaLocation = GvGetLocationHistory(gv, player, &numLocs, &canFree);
       PlaceId draculaPlace = draculaLocation[numLocs - 1];
-      if (canFree == TRUE) {
+      if (canFree == true) {
          free(draculaLocation);
       }
       return draculaPlace;
@@ -141,18 +139,30 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 
 PlaceId GvGetVampireLocation(GameView gv)
 {
-	// TODO: still needs considering
+	// TODO: done but edge cases still needs to be tested.
    
-   int numLocs = 0;
-   bool canFree = TRUE;
+   // startSearch needs a bit more thought
+   int startSearch = (GvGetRound(gv) / 13) * 13;
+   PlaceId vampireLocation;
 	
-	bool vampireExists = FALSE;
+	// if vampire is spawned
+   char *draculaMove = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, startSearch);
+   if (draculaMove != NULL && strncmp(draculaMove + 4, "V", 1) == 0) {
+      vampireLocation = GvGetPlayerLocation(gv, PLAYER_DRACULA);
+   } else {
+      return NOWHERE;
+   }
 	
-	PlaceId *draculaLocation = GvGetLocationHistory(gv, PLAYER_DRACULA, &numLocs, &canFree);
-	
-	
-	
-	return NOWHERE;
+	// if vampire is vanquished
+	for (int i = startSearch + 1; i <= GvGetRound(gv) && i <= startSearch + 6; i++) {
+	   for (int j = 0; j < 4; j++) {
+	      char *hunterMove = getCurrentMove(gv->pastPlays, j, i);
+	      if (hunterMove != NULL && strncmp(hunterMove + 4, "V", 1) == 0) {
+	         return NOWHERE;
+	      }
+	   }
+	}
+	return vampireLocation;
 }
 
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
@@ -169,7 +179,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested - canFree causes a segfault
-   //*canFree = TRUE;
+   //*canFree = true;
 
    return playerMoveHistory(gv, player, numReturnedMoves);
 }
@@ -178,7 +188,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested - canFree causes a segfault
-	//*canFree = TRUE;
+	//*canFree = true;
 
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
 }
@@ -187,7 +197,7 @@ PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
    // TODO: done, needs testing - canFree causes a segfault
-   //*canFree = TRUE;
+   //*canFree = true;
 
    PlaceId *moveHistory = playerMoveHistory(gv, player, numReturnedLocs);
 
@@ -201,7 +211,7 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
    // TODO: done, needs testing - canFree causes a segfault
-   //*canFree = TRUE;
+   //*canFree = true;
    
    PlaceId *lastMoves = playerLastMoves(gv, player, numLocs, numReturnedLocs);
 
@@ -320,12 +330,12 @@ bool placeMatch(char *pastPlays, Player player, PlaceId place,
         if (i >= start && i % NUM_PLAYERS == player) {
             char *abbrev = strndup(move + 1, 2);
             if (place == placeAbbrevToId(abbrev)) {
-                return TRUE;
+                return true;
             }
         }
         move = strtok(NULL, delim);
     }
-    return FALSE;
+    return false;
 }
 
 
