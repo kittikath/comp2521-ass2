@@ -43,10 +43,9 @@ Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 
 
-PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
-                                   int *numReturned);
-PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
-                                int *numReturned);
+PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves);
+PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
+                         int *numReturnedMoves);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -125,6 +124,10 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
       char *move = getPlayerMove(gv->pastPlays, player, currentRound);
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
+   // for dracula
+   } else {
+      
+      return NOWHERE;
    }
    
    // for dracula
@@ -150,66 +153,53 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested; this needs fixing for dracula
-	//       going to make this a wrapper function
-    *canFree = false;
+	// TODO: done but not tested
+    *canFree = TRUE;
     
-    if (player != PLAYER_DRACULA) {
-        // numReturnedMoves might need to get passed as a pointer to the pointer
-        return HunterMoveLocationHistory(gv, player, numReturnedMoves);
-    } else {
-        // TODO: FOR DRACULA!!
-        return NULL;
-    }
+   // numReturnedMoves might need to get passed as a pointer to the pointer
+   return playerMoveHistory(gv, player, numReturnedMoves);
 }
 
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested; this needs fixing for dracula
-	//       going to make this a wrapper function
-	*canFree = false;
-    
-    if (player != PLAYER_DRACULA) {
-        // numReturnedMoves might need to get passed as a pointer to the pointer
-        return HunterLastMoveLocation(gv, player, numMoves, numReturnedMoves);
-    } else {
-        // TODO: FOR DRACULA!!
-        return NULL;
-    }
+	// TODO: done but not tested
+	*canFree = TRUE;
+	
+	// numReturnedMoves might need to get passed as a pointer to the pointer
+	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
 }
 
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
-	// TODO: this is pretty much already done as above
-	//       this is a wrapper function
-	*canFree = false;
-	
-    if (player != PLAYER_DRACULA) {
-        // numReturnedLocs might need to get passed as a pointer to the pointer
-        return HunterMoveLocationHistory(gv, player, numReturnedLocs);
-    } else {
-        // TODO: FOR DRACULA!!
-        return NULL;
-    }
+   // TODO: this is pretty much already done as above
+   //       this is a wrapper function
+   *canFree = false;
 
+   if (player != PLAYER_DRACULA) {
+      // numReturnedMoves might need to get passed as a pointer to the pointer
+      return playerMoveHistory(gv, player, numReturnedLocs);
+   } else {
+      // TODO: FOR DRACULA!!
+      return NULL;
+   }
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-	// TODO: this is pretty much already done as above
-	//       this is a wrapper function
-	*canFree = false;
-	
-    if (player != PLAYER_DRACULA) {
-        // numReturnedLocs might need to get passed as a pointer to the pointer
-        return HunterLastMoveLocation(gv, player, numLocs, numReturnedLocs);
-    } else {
-        // TODO: FOR DRACULA!!
-        return NULL;
-    }
+   // TODO: this is pretty much already done as above
+   //       this is a wrapper function
+   *canFree = false;
+
+   if (player != PLAYER_DRACULA) {
+      // numReturnedMoves might need to get passed as a pointer to the pointer
+      return playerLastMoves(gv, player, numLocs, numReturnedLocs);
+   } else {
+      // TODO: FOR DRACULA!!
+      return NULL;
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -361,59 +351,59 @@ Round placeBeenL(char *pastPlays, Player player, PlaceId place)
 
 // ------------------ move-location helper functions ---------------------------
 
-// helper function to find hunter move and location history
-PlaceId *HunterMoveLocationHistory(GameView gv, Player player,
-                                   int *numReturned)
+// helper function to find player move history
+PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves)
 {
     // TODO: should be working
-	int numHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
+	int numMoveHistory = GvGetRound(gv) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
-      numHistory--;
+      numMoveHistory--;
     }
 	
-	PlaceId *history = malloc(numHistory * sizeof(*history));
+	PlaceId *moveHistory = malloc(numMoveHistory * sizeof(*moveHistory));
 	
 	// finds move made every round and adds to array
-	for (int i = 0; i < numHistory; i++) {
+	for (int i = 0; i < numMoveHistory; i++) {
       char *move = getPlayerMove(gv->pastPlays, player, i);
       char *abbrev = strndup(move + 1, 2);
-      history[i] = placeAbbrevToId(abbrev);
+      moveHistory[i] = placeAbbrevToId(abbrev);
 	}
 	
-	*numReturned = numHistory;
-	return history;
+	*numReturnedMoves = numMoveHistory;
+	return moveHistory;
 }
 
 
 // helper function to find n last hunter moves and locations
-PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
-                                int *numReturned)
+PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
+                        int *numReturnedMoves)
 {
     // TODO: should be working
-	int numHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
+	int numMoveHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
-      numHistory--;
+      numMoveHistory--;
    }
     
-    int numLast;
+    int numLastMoves;
     // setting the number of last moves available
-    if (numHistory > num) {
-        numLast = num;
+    if (numMoveHistory > numMoves) {
+        numLastMoves = numMoves;
     } else {
-        numLast = numHistory;
+        numLastMoves = numMoveHistory;
     }
 	
-	PlaceId *last = malloc(numLast * sizeof(*last));
+	PlaceId *lastMoves = malloc(numLastMoves * sizeof(*lastMoves));
 	
 	// finds last n moves made and adds to array
-	for (int i = numHistory - numLast, j = 0; i < numHistory; i++, j++) {
+	for (int i = numMoveHistory - numLastMoves, j = 0; 
+	     i < numMoveHistory; i++, j++) {
 	    char *move = getPlayerMove(gv->pastPlays, player, i);
 	    char *abbrev = strndup(move + 1, 2);
-	    last[j] = placeAbbrevToId(abbrev);
+	    lastMoves[j] = placeAbbrevToId(abbrev);
 	}
 	
-	*numReturned = numLast;
-	return last;
+	*numReturnedMoves = numLastMoves;
+	return lastMoves;
 }
