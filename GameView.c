@@ -37,6 +37,7 @@ struct gameView {
 // helper functions
 
 char *getPlayerMove(char *pastPlays, Player player, Round round);
+char *getCurrentMove(char *pastPlays, Player player, Round round);
 bool placeMatch(char *pastPlays, Player player, PlaceId Place,
                 Round roundStart, Round roundEnd);
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
@@ -128,7 +129,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
    // for dracula
    } else {
       int numLocs = 0;
-      bool canFree = FALSE;
+      bool canFree = TRUE;
       PlaceId *draculaLocation = GvGetLocationHistory(gv, player, &numLocs, &canFree);
       PlaceId draculaPlace = draculaLocation[numLocs - 1];
       if (canFree == TRUE) {
@@ -141,6 +142,16 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 PlaceId GvGetVampireLocation(GameView gv)
 {
 	// TODO: still needs considering
+   
+   int numLocs = 0;
+   bool canFree = TRUE;
+	
+	bool vampireExists = FALSE;
+	
+	PlaceId *draculaLocation = GvGetLocationHistory(gv, PLAYER_DRACULA, &numLocs, &canFree);
+	
+	
+	
 	return NOWHERE;
 }
 
@@ -259,6 +270,29 @@ char *getPlayerMove(char *pastPlays, Player player, Round round)
    // check to make sure function is used correctly
    assert(move != NULL);
    return move;
+}
+
+// returns the string containing a player's move in a given round. if the
+// player has not made a move in the given round, it will return NULL
+// returns a string formatted as such "GMN...."
+char *getCurrentMove(char *pastPlays, Player player, Round round)
+   {
+   // TODO: some testing needed
+
+   char *string = strdup(pastPlays);
+   char delim[] = " ";
+   char *move;
+
+   // the number of times strtok tokenises to reach the requested move
+   int limit = round * NUM_PLAYERS + player;
+
+   // looks through the pastPlays string until requested move is reached
+   // or end is reached
+   token = strtok(string, delim);
+   for (int i = 0; i < limit && token != NULL; i++) {
+      token = strtok(NULL, delim);
+   }   
+   return token;
 }
 
 
