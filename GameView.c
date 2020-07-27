@@ -179,7 +179,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested - canFree causes a segfault
-   //*canFree = true;
+   *canFree = true;
 
    return playerMoveHistory(gv, player, numReturnedMoves);
 }
@@ -188,7 +188,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
 	// TODO: done but not tested - canFree causes a segfault
-	//*canFree = true;
+	*canFree = true;
 
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
 }
@@ -197,7 +197,7 @@ PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
    // TODO: done, needs testing - canFree causes a segfault
-   //*canFree = true;
+   *canFree = true;
 
    PlaceId *moveHistory = playerMoveHistory(gv, player, numReturnedLocs);
 
@@ -211,7 +211,7 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
    // TODO: done, needs testing - canFree causes a segfault
-   //*canFree = true;
+   *canFree = true;
    
    PlaceId *lastMoves = playerLastMoves(gv, player, numLocs, numReturnedLocs);
 
