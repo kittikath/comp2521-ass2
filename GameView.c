@@ -288,11 +288,11 @@ char *getCurrentMove(char *pastPlays, Player player, Round round)
 
    // looks through the pastPlays string until requested move is reached
    // or end is reached
-   token = strtok(string, delim);
-   for (int i = 0; i < limit && token != NULL; i++) {
-      token = strtok(NULL, delim);
+   move = strtok(string, delim);
+   for (int i = 0; i < limit && move != NULL; i++) {
+      move = strtok(NULL, delim);
    }   
-   return token;
+   return move;
 }
 
 
