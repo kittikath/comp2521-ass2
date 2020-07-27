@@ -72,8 +72,8 @@ GameView GvNew(char *pastPlays, Message messages[])
 	new->pastPlays = pastPlays;
 	new->messages = messages;
 	
-    int i, j;
-    int round = GvGetRound(new);
+    int i, j = 0;
+    //int round = GvGetRound(new);
 
     // if pastplays is empty
 	if (strlen(pastPlays) == 0) {
@@ -102,6 +102,25 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
     */
+    calculateHealth(new, 1);
+
+    i = 0;
+    j = 0;
+    char string[8] = {0};
+
+    while (i < strlen(pastPlays)) {
+        while (j < 8) {
+           string[j] = pastPlays[i];
+           i++;
+           j++;
+        }
+    }
+
+    // for hunters
+    calculateHealth(new, player);
+
+    printf("pastplays string is %s\n", string);
+
 	printf("score is: %d\n", calculateScore(new));
 
 	return new;
@@ -599,7 +618,6 @@ static void calculateHealth(GameView gv, enum player player) {
 			curLoc = GvGetPlayerLocation(gv, player);
             printf("curMove string is %s\n", curMove);
 			// encounter Dracula, lose 4 hp and he loses 10 hp
-            //printf("curMove string is %d\n", curMove[i]);
 			if (curMove[4] == 'D') {
                 printf("hi\n");
 				gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
