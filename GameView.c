@@ -159,8 +159,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 {
 	// TODO: done but not tested - canFree causes a segfault
    //*canFree = TRUE;
-    
-   // numReturnedMoves might need to get passed as a pointer to the pointer
+
    return playerMoveHistory(gv, player, numReturnedMoves);
 }
 
@@ -169,8 +168,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 {
 	// TODO: done but not tested - canFree causes a segfault
 	//*canFree = TRUE;
-	
-	// numReturnedMoves might need to get passed as a pointer to the pointer
+
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
 }
 
@@ -412,10 +410,10 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
 {
    // could do without the 'refer' array
-   // this array helps to refer dracula's moves
+   // this array helps to refer to dracula's past moves
    int refer[numMoves];
    
-   // building pred array
+   // building refer back array
    for (int i = 0; i < numMoves; i++) {
       switch (draculaMoves[i])  {
          case HIDE:
