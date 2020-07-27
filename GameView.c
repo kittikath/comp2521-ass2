@@ -29,7 +29,7 @@ struct gameView {
 	// TODO: ADD FIELDS HERE - added a few
 	// from darwin and kath's branch //
 	int score;
-	int location[NUM_REAL_PLACES];
+	int location[NUM_PLAYERS];
 	int health[NUM_PLAYERS];
 	//////////////////////////////////
 	char *pastPlays;
@@ -46,8 +46,11 @@ bool placeMatch(char *pastPlays, Player player, PlaceId Place,
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 int calculateScore(GameView gv);
-static void calculateHealth(GameView gv, enum player player);
+//static void calculateHealth(GameView gv, enum player player);
+static void updateHunter(GameView gv, char *string, Player player);
+static void updateDracula(GameView gv, char *string, Player player);
 bool isHunterDead(GameView gv, enum player player);
+
 
 
 
@@ -73,7 +76,6 @@ GameView GvNew(char *pastPlays, Message messages[])
 	new->messages = messages;
 	
     int i, j = 0;
-    //int round = GvGetRound(new);
 
     // if pastplays is empty
 	if (strlen(pastPlays) == 0) {
@@ -91,8 +93,43 @@ GameView GvNew(char *pastPlays, Message messages[])
 		printf("score = %d\n", new->score);
 		return new;
 	}
-
 	printf("pastPlays string is: %s\n", pastPlays);
+   
+   // all this does is just give updatehunter and updatedracula the pastPlays string in segments of 8 char strings
+    i = 0;
+    j = 0;
+    char string[8] = {};
+    while (i < strlen(pastPlays)) {
+        for (j = 0; j < 8; j++) {
+           string[j] = pastPlays[i];
+           i++;
+        }
+        // hi friends if you have read this i am literally losing my mind that getplayer does not work on my below
+        // functions so i have decided to hard code it for now good god i have depression
+        if(string[0] != 'D') {
+            // can probably shorten this so i am leaving this big if clusterheck
+            if(string[0] == 'G') {
+                updateHunter(new, string, PLAYER_LORD_GODALMING);
+            }
+            if(string[0] == 'S') {
+                updateHunter(new, string, PLAYER_DR_SEWARD);
+            }
+            if(string[0] == 'H') {
+                updateHunter(new, string, PLAYER_VAN_HELSING);
+            }
+            if(string[0] == 'M') {
+                updateHunter(new, string, PLAYER_MINA_HARKER);
+            }
+        }
+        else {
+            updateDracula(new, string, PLAYER_DRACULA);
+        }
+    }
+    for (i = 0; i < NUM_PLAYERS; i++) {
+        printf("hp of player %d is: %d\n", i, new->health[i]);
+    }
+	printf("score is: %d\n", calculateScore(new));
+	return new;
     /*
     for (j = 0; j < round+1; j++) {
         printf("round is %d\n", round);
@@ -102,28 +139,6 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
     */
-    calculateHealth(new, 1);
-
-    i = 0;
-    j = 0;
-    char string[8] = {0};
-
-    while (i < strlen(pastPlays)) {
-        while (j < 8) {
-           string[j] = pastPlays[i];
-           i++;
-           j++;
-        }
-    }
-
-    // for hunters
-    calculateHealth(new, player);
-
-    printf("pastplays string is %s\n", string);
-
-	printf("score is: %d\n", calculateScore(new));
-
-	return new;
 }
 
 void GvFree(GameView gv)
@@ -600,6 +615,71 @@ int calculateScore(GameView gv) {
 	return totalScore;
 }
 
+static void updateHunter(GameView gv, char *string, Player player) {
+
+    //int player = GvGetPlayer(gv);
+    printf("player in uhunter is %d\n", player);
+    //int round = GvGetRound(gv);
+    PlaceId curLoc = GvGetPlayerLocation(gv, player);
+    //char *curMove = getCurrentMove(gv->pastPlays, player, round);
+
+    // encounter Dracula, lose 4 hp and he loses 10 hp
+    printf("%s\n", string);
+    if (string[4] == 'D') {
+        gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
+		gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
+    }
+    // encounter a trap, lose 2 hp
+    if (string[2] == 'T') {
+        gv->health[player] -= LIFE_LOSS_TRAP_ENCOUNTER;
+    }
+    // if location of player matches 
+    if (gv->location[player] == curLoc) {
+        gv->health[player] += LIFE_GAIN_REST;
+            // if health exceeds max pool, revert back to max pool
+            if (gv->health[player] > GAME_START_HUNTER_LIFE_POINTS) {
+                gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
+        }
+    }
+    // health goes under 0, teleport to hospital
+    if (isHunterDead(gv, player) == true) {
+        // if hunter is already in hospital, it means a new turn has started
+        if (curLoc == ST_JOSEPH_AND_ST_MARY) {
+            gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
+        }
+        gv->location[player] = ST_JOSEPH_AND_ST_MARY;
+    }
+    // update location for hunter
+    gv->location[player] = curLoc;
+
+}
+
+static void updateDracula(GameView gv, char *string, Player player) {
+
+    //int player = GvGetPlayer(gv);
+    printf("player in udracula is %d\n", player);
+    //int round = GvGetRound(gv);
+    PlaceId curLoc = GvGetPlayerLocation(gv, player);
+    printf("%s\n", string);
+    /*
+    // if dracula is dead, break out of func and maybe have another condition outside
+    if (gv->health[player] <= 0) {
+        break;
+    }
+    */
+
+    // if dracula is at sea, lose 2 hp
+    if (placeIdToType(curLoc) == SEA) {
+        gv->health[player] -= LIFE_LOSS_SEA;
+    }
+    // if dracula is in castle dracula, gain 10 hp
+    if (curLoc == CASTLE_DRACULA) {
+        gv->health[player] += LIFE_GAIN_CASTLE_DRACULA;
+    }
+}
+
+
+/*
 // calculates the health of a player and teleports player to respawn locations
 // INCOMPLETE: Have dracula health to do
 static void calculateHealth(GameView gv, enum player player) {
@@ -672,6 +752,7 @@ static void calculateHealth(GameView gv, enum player player) {
 	}
 	
 }
+*/
 
 bool isHunterDead(GameView gv, enum player player) {
 
