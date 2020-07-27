@@ -115,33 +115,20 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
    
    int currentRound = GvGetRound(gv);
    
-   if (currentRound != 0) {
-   
-   
-   
-   
+   // player has not made a turn
+   if (currentRound == 0 && GvGetPlayer(gv) <= player) {
+      return NOWHERE;
    }
-   // end of round, before start of next round
-   if ((strlen(gv->pastPlays) + 1) % (8 * NUM_PLAYERS) == 0) {
-      currentRound--;
+
+   // for hunters
+   if (player != PLAYER_DRACULA) {
       char *move = getPlayerMove(gv->pastPlays, player, currentRound);
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
    }
-
-   if (player != PLAYER_DRACULA) {
-      // if player made a move during the current round
-      if (GvGetPlayer(gv) > player) {
-         char *move = getPlayerMove(gv->pastPlays, player, currentRound);
-         char *abbrev = strndup(move + 1, 2);
-         return placeAbbrevToId(abbrev);
-      }
-      // move not yet made
-      return NOWHERE;
-   } else {
-      // TODO: FOR DRACULA
-      return NOWHERE;
-   }
+   
+   // for dracula
+   return NOWHERE;
 }
 
 PlaceId GvGetVampireLocation(GameView gv)
@@ -269,10 +256,6 @@ char *getPlayerMove(char *pastPlays, Player player, Round round)
 
    // the number of times strtok tokenises to reach the requested move
    int limit = round * NUM_PLAYERS + player;
-   
-   // check to make sure function is used correctly
-   int available = (strlen(pastPlays) + 1) / 8;
-   assert(limit <= available);
 
    // looks through the pastPlays string until requested move is reached
    // or end is reached
@@ -284,6 +267,9 @@ char *getPlayerMove(char *pastPlays, Player player, Round round)
       }
       token = strtok(NULL, delim);
    }
+   
+   // check to make sure function is used correctly
+   assert(move != NULL);
    return move;
 }
 
