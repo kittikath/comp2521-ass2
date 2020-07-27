@@ -63,10 +63,11 @@ GameView GvNew(char *pastPlays, Message messages[])
 		printf("score = %d\n", new->score);
 		return new;
 	}
-    
+
 	printf("pastPlays string is: %s\n", pastPlays);
 
 	for (i = 0; i < NUM_PLAYERS; i++) {
+		printf("hi\n");
 		calculateHealth(new, i);
 		printf("player %d's health is: %d\n", i, new->health[i]);
 	}
@@ -303,7 +304,7 @@ int calculateScore(GameView gv) {
 	return totalScore;
 }
 
-// calculates the health of a player
+// calculates the health of a player and teleports player to respawn locations
 static void calculateHealth(GameView gv, enum player player) {
 	
 	int i;
@@ -319,9 +320,10 @@ static void calculateHealth(GameView gv, enum player player) {
 			// string of location, e.g "MN"
 			curLoc = GvGetPlayerLocation(gv, player);
 
-			// encounter Dracula, lose 4 hp
+			// encounter Dracula, lose 4 hp and he loses 10 hp
 			if (curMove[4] == 'D') {
 				gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
+				gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
 			}
 			if (i > 0) {
 				// encounter a trap, lose 2 hp
@@ -348,6 +350,16 @@ static void calculateHealth(GameView gv, enum player player) {
 			prevLoc = GvGetPlayerLocation(gv, player);
 		}
 	}
+	// draculas health
+	/*
+	else {
+		for (i = 0; i < round; i++) {
+			curMove = getCurrentMove(gv->pastPlays, player, i);
+			curLoc = GvGetPlayerLocation(gv, player);
+			if (curMove[])
+		}
+	}
+	*/
 }
 
 bool isHunterDead(GameView gv, enum player player) {
