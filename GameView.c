@@ -23,6 +23,7 @@
 
 #define TRUE 1
 #define FALSE 0
+#define PLAY_LEN 8
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
@@ -52,23 +53,23 @@ PlaceId *HunterLastMoveLocation(GameView gv, Player player, int num,
 
 GameView GvNew(char *pastPlays, Message messages[])
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE!
 	GameView new = malloc(sizeof(*new));
 	if (new == NULL) {
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
 	
+	// adding necessary fields to GameView struct
 	new->pastPlays = pastPlays;
 	new->messages = messages;
-	//printf("%s messages\n", new->messages[1]);
 	
 	return new;
 }
 
 void GvFree(GameView gv)
 {
-	// TODO: do we need to free pastPlays and messages?
+	// TODO: DONE!
 	free(gv);
 }
 
@@ -110,22 +111,37 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-	// TODO: dracula location still need considering
-	if (player != PLAYER_DRACULA) {
-	    // if player made a move during the current round
-	    if (GvGetPlayer(gv) > player) {
-	        // TODO: this stuff below could be moved outside the nested if's
-	        int currentRound = (strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS);
-	        char *move = getPlayerMove(gv->pastPlays, player, currentRound);
-	        char *abbrev = strndup(move + 1, 2);
-            return placeAbbrevToId(abbrev);
-	    }
-	    // move not yet made
-	    return NOWHERE;
-	} else {
-	    // TODO: FOR DRACULA
-	    return NOWHERE;
-	}
+   // TODO: dracula location still need considering
+   
+   int currentRound = GvGetRound(gv);
+   
+   if (currentRound != 0) {
+   
+   
+   
+   
+   }
+   // end of round, before start of next round
+   if ((strlen(gv->pastPlays) + 1) % (8 * NUM_PLAYERS) == 0) {
+      currentRound--;
+      char *move = getPlayerMove(gv->pastPlays, player, currentRound);
+      char *abbrev = strndup(move + 1, 2);
+      return placeAbbrevToId(abbrev);
+   }
+
+   if (player != PLAYER_DRACULA) {
+      // if player made a move during the current round
+      if (GvGetPlayer(gv) > player) {
+         char *move = getPlayerMove(gv->pastPlays, player, currentRound);
+         char *abbrev = strndup(move + 1, 2);
+         return placeAbbrevToId(abbrev);
+      }
+      // move not yet made
+      return NOWHERE;
+   } else {
+      // TODO: FOR DRACULA
+      return NOWHERE;
+   }
 }
 
 PlaceId GvGetVampireLocation(GameView gv)
@@ -239,30 +255,36 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 //------------------------- general helper functions ---------------------------
 
-// returns the string containing a player's move in a given round
+// returns the string containing a player's move in a given round. if the input
+// round exceeds current round, last move made by player is returned
+// returns a string formatted as such "GMN...."
 char *getPlayerMove(char *pastPlays, Player player, Round round)
-{
-    // TODO:
-    // if requested round has not been played
-    // or if player has not made a move in the requested round
-    // the assert could be removed it is causes an issue
-    // hopefully this function doesn't need to handle invalid cases
-    int currentRound = (strlen(pastPlays) + 1) / 8;    
-    assert(round <= currentRound || ((strlen(pastPlays) + 1) / 8) % 5 > player);
-    
-    char *string = strdup(pastPlays);
-    char delim[] = " ";
-    char *move;
-    
-    // the number of times strtok tokenises to reach the requested move
-    int limit = round * NUM_PLAYERS + player;
-    
-    // looks through the pastPlays string until requested move is reached
-    move = strtok(string, delim);
-    for (int i = 0; i < limit && move != NULL; i++) {        
-        move = strtok(NULL, delim);
-    }
-    return move;
+   {
+   // TODO: some testing needed
+
+   char *string = strdup(pastPlays);
+   char delim[] = " ";
+   char *token;
+   char *move;
+
+   // the number of times strtok tokenises to reach the requested move
+   int limit = round * NUM_PLAYERS + player;
+   
+   // check to make sure function is used correctly
+   int available = (strlen(pastPlays) + 1) / 8;
+   assert(limit <= available);
+
+   // looks through the pastPlays string until requested move is reached
+   // or end is reached
+   token = strtok(string, delim);
+   for (int i = 0; i <= limit && token != NULL; i++) {
+      // if move is made by player, it is updated
+      if (i % NUM_PLAYERS == player) {
+         move = token;
+      }
+      token = strtok(NULL, delim);
+   }
+   return move;
 }
 
 
