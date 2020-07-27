@@ -46,6 +46,7 @@ Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves);
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                          int *numReturnedMoves);
+void findDraculaLocation(int numMoves, PlaceId *draculaMoves);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -110,7 +111,7 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-   // TODO: dracula location still need considering
+   // TODO: DONE! needs testing
    
    int currentRound = GvGetRound(gv);
    
@@ -126,12 +127,15 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
       return placeAbbrevToId(abbrev);
    // for dracula
    } else {
-      
-      return NOWHERE;
+      int numLocs = 0;
+      bool canFree = FALSE;
+      PlaceId *draculaLocation = GvGetLocationHistory(gv, player, &numLocs, &canFree);
+      PlaceId draculaPlace = draculaLocation[numLocs - 1];
+      if (canFree == TRUE) {
+         free(draculaLocation);
+      }
+      return draculaPlace;
    }
-   
-   // for dracula
-   return NOWHERE;
 }
 
 PlaceId GvGetVampireLocation(GameView gv)
@@ -153,8 +157,8 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested
-    *canFree = TRUE;
+	// TODO: done but not tested - canFree causes a segfault
+   //*canFree = TRUE;
     
    // numReturnedMoves might need to get passed as a pointer to the pointer
    return playerMoveHistory(gv, player, numReturnedMoves);
@@ -163,8 +167,8 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested
-	*canFree = TRUE;
+	// TODO: done but not tested - canFree causes a segfault
+	//*canFree = TRUE;
 	
 	// numReturnedMoves might need to get passed as a pointer to the pointer
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
@@ -173,33 +177,29 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
-   // TODO: this is pretty much already done as above
-   //       this is a wrapper function
-   *canFree = false;
+   // TODO: done, needs testing - canFree causes a segfault
+   //*canFree = TRUE;
 
-   if (player != PLAYER_DRACULA) {
-      // numReturnedMoves might need to get passed as a pointer to the pointer
-      return playerMoveHistory(gv, player, numReturnedLocs);
-   } else {
-      // TODO: FOR DRACULA!!
-      return NULL;
+   PlaceId *moveHistory = playerMoveHistory(gv, player, numReturnedLocs);
+
+   if (player == PLAYER_DRACULA) {
+      findDraculaLocation(*numReturnedLocs, moveHistory);
    }
+   return moveHistory;
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-   // TODO: this is pretty much already done as above
-   //       this is a wrapper function
-   *canFree = false;
+   // TODO: done, needs testing - canFree causes a segfault
+   //*canFree = TRUE;
+   
+   PlaceId *lastMoves = playerLastMoves(gv, player, numLocs, numReturnedLocs);
 
-   if (player != PLAYER_DRACULA) {
-      // numReturnedMoves might need to get passed as a pointer to the pointer
-      return playerLastMoves(gv, player, numLocs, numReturnedLocs);
-   } else {
-      // TODO: FOR DRACULA!!
-      return NULL;
+   if (player == PLAYER_DRACULA) {
+      findDraculaLocation(*numReturnedLocs, lastMoves);
    }
+   return lastMoves;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -375,7 +375,7 @@ PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves)
 }
 
 
-// helper function to find n last hunter moves and locations
+// helper function to find n last player moves
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                         int *numReturnedMoves)
 {
@@ -406,4 +406,45 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
 	
 	*numReturnedMoves = numLastMoves;
 	return lastMoves;
+}
+
+// helper function to find dracula location from dracula moves
+void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
+{
+   // could do without the 'refer' array
+   // this array helps to refer dracula's moves
+   int refer[numMoves];
+   
+   // building pred array
+   for (int i = 0; i < numMoves; i++) {
+      switch (draculaMoves[i])  {
+         case HIDE:
+            refer[i] = i - 1;
+            break;
+         case DOUBLE_BACK_1:
+            refer[i] = i - 1;
+            break;
+         case DOUBLE_BACK_2:
+            refer[i] = i - 2;
+            break;
+         case DOUBLE_BACK_3:
+            refer[i] = i - 3;
+            break;
+         case DOUBLE_BACK_4:
+            refer[i] = i - 4;
+            break;
+         case DOUBLE_BACK_5:
+            refer[i] = i - 5;
+            break;
+         case TELEPORT:
+            draculaMoves[i] = CASTLE_DRACULA;
+         default:
+            refer[i] = i;
+      }
+   }
+
+   // fixing the locations by looking through the refer list
+   for (int i = 0; i < numMoves; i++) {
+      draculaMoves[i] = draculaMoves[refer[i]];
+   }
 }
