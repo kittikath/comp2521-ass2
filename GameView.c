@@ -47,8 +47,8 @@ Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 int calculateScore(GameView gv);
 //static void calculateHealth(GameView gv, enum player player);
-static void updateHunter(GameView gv, char *string, Player player);
-static void updateDracula(GameView gv, char *string, Player player);
+void updateHunter(GameView gv, char *string, Player player);
+void updateDracula(GameView gv, char *string, Player player);
 bool isHunterDead(GameView gv, enum player player);
 
 
@@ -77,23 +77,26 @@ GameView GvNew(char *pastPlays, Message messages[])
 	
     int i, j = 0;
 
-    // if pastplays is empty
-	if (strlen(pastPlays) == 0) {
-		// for hunters
-		for (i = 0; i < 4; i++) {
-			new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
-			printf("health of hunter: %d\n", new->health[i]);
-			new->location[i] = NOWHERE;
-		}
-		// for dracula
-		new->health[4] = GAME_START_BLOOD_POINTS;
-		printf("health of dracula: %d\n", new->health[4]);
-		// initial score
-		new->score = GAME_START_SCORE;
-		printf("score = %d\n", new->score);
-		return new;
-	}
+    // for hunters
+    for (i = 0; i < 4; i++) {
+        new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
+        printf("health of hunter: %d\n", new->health[i]);
+        new->location[i] = NOWHERE;
+    }
+    // for dracula
+    new->health[4] = GAME_START_BLOOD_POINTS;
+    printf("health of dracula: %d\n", new->health[4]);
+    new->location[4] = NOWHERE;
+
+    // initial score
+    new->score = GAME_START_SCORE;
+    printf("score = %d\n", new->score);
+
 	printf("pastPlays string is: %s\n", pastPlays);
+
+    for (i = 0; i < NUM_PLAYERS; i++) {
+        printf("START OF ROUND hp of player %d is: %d\n", i, new->health[i]);
+    }
    
    // all this does is just give updatehunter and updatedracula the pastPlays string in segments of 8 char strings
     i = 0;
@@ -126,7 +129,7 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
     for (i = 0; i < NUM_PLAYERS; i++) {
-        printf("hp of player %d is: %d\n", i, new->health[i]);
+        printf("END OF ROUND hp of player %d is: %d\n", i, new->health[i]);
     }
 	printf("score is: %d\n", calculateScore(new));
 	return new;
@@ -615,26 +618,30 @@ int calculateScore(GameView gv) {
 	return totalScore;
 }
 
-static void updateHunter(GameView gv, char *string, Player player) {
+void updateHunter(GameView gv, char *string, Player player) {
 
     //int player = GvGetPlayer(gv);
     printf("player in uhunter is %d\n", player);
     //int round = GvGetRound(gv);
+    printf("location of hunter is = %d\n", gv->location[player]);
     PlaceId curLoc = GvGetPlayerLocation(gv, player);
+    printf("location of curLoc is = %d\n", curLoc);
     //char *curMove = getCurrentMove(gv->pastPlays, player, round);
 
     // encounter Dracula, lose 4 hp and he loses 10 hp
     printf("%s\n", string);
     if (string[4] == 'D') {
+        printf("ouch\n");
         gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
 		gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
     }
     // encounter a trap, lose 2 hp
-    if (string[2] == 'T') {
+    if (string[3] == 'T') {
         gv->health[player] -= LIFE_LOSS_TRAP_ENCOUNTER;
     }
     // if location of player matches 
     if (gv->location[player] == curLoc) {
+        printf("heal\n");
         gv->health[player] += LIFE_GAIN_REST;
             // if health exceeds max pool, revert back to max pool
             if (gv->health[player] > GAME_START_HUNTER_LIFE_POINTS) {
@@ -654,7 +661,7 @@ static void updateHunter(GameView gv, char *string, Player player) {
 
 }
 
-static void updateDracula(GameView gv, char *string, Player player) {
+void updateDracula(GameView gv, char *string, Player player) {
 
     //int player = GvGetPlayer(gv);
     printf("player in udracula is %d\n", player);
@@ -670,6 +677,7 @@ static void updateDracula(GameView gv, char *string, Player player) {
 
     // if dracula is at sea, lose 2 hp
     if (placeIdToType(curLoc) == SEA) {
+        printf("im drowning\n");
         gv->health[player] -= LIFE_LOSS_SEA;
     }
     // if dracula is in castle dracula, gain 10 hp
