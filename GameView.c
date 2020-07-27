@@ -72,6 +72,38 @@ GameView GvNew(char *pastPlays, Message messages[])
 	new->pastPlays = pastPlays;
 	new->messages = messages;
 	
+    int i, j;
+    int round = GvGetRound(new);
+
+    // if pastplays is empty
+	if (strlen(pastPlays) == 0) {
+		// for hunters
+		for (i = 0; i < 4; i++) {
+			new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
+			printf("health of hunter: %d\n", new->health[i]);
+			new->location[i] = NOWHERE;
+		}
+		// for dracula
+		new->health[4] = GAME_START_BLOOD_POINTS;
+		printf("health of dracula: %d\n", new->health[4]);
+		// initial score
+		new->score = GAME_START_SCORE;
+		printf("score = %d\n", new->score);
+		return new;
+	}
+
+	printf("pastPlays string is: %s\n", pastPlays);
+    /*
+    for (j = 0; j < round+1; j++) {
+        printf("round is %d\n", round);
+        for (i = 0; i < NUM_PLAYERS; i++) {
+            calculateHealth(new, i);
+            printf("player %d's health is: %d\n", i, new->health[i]);
+        }
+    }
+    */
+	printf("score is: %d\n", calculateScore(new));
+
 	return new;
 }
 
@@ -110,11 +142,7 @@ int GvGetScore(GameView gv)
 int GvGetHealth(GameView gv, Player player)
 {
 	// TODO: needs to be fixed
-	if (player != PLAYER_DRACULA) {
-	   return GAME_START_HUNTER_LIFE_POINTS;
-   } else {
-      return GAME_START_BLOOD_POINTS;
-   }
+	return gv->health[player];
 }
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
@@ -130,11 +158,13 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 
    // for hunters
    if (player != PLAYER_DRACULA) {
+       //printf("hunterplayerloc\n");
       char *move = getPlayerMove(gv->pastPlays, player, currentRound);
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
    // for dracula
    } else {
+       //printf("dracplayerloc\n");
       int numLocs = 0;
       bool canFree = true;
       PlaceId *draculaLocation = GvGetLocationHistory(gv, player, &numLocs, &canFree);
@@ -506,13 +536,13 @@ int calculateScore(GameView gv) {
 	int totalScore = GAME_START_SCORE;
 	int round = GvGetRound(gv);
 	int i, j;
-	int draculaTurn = 0, vampCount = 0, huntCount = 0;
+	int draculaCount = 0, vampCount = 0, huntCount = 0;
 
 	// loop through all the rounds
 	for (i = 0; i < round; i++) {
 		// if dracula's turn exists, increment
 		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
-			draculaTurn += SCORE_LOSS_DRACULA_TURN;
+			draculaCount += SCORE_LOSS_DRACULA_TURN;
 		}
 	}
 
@@ -540,7 +570,7 @@ int calculateScore(GameView gv) {
 	}
 
 	// dracula finishes his turn
-	totalScore = totalScore - draculaTurn;
+	totalScore = totalScore - draculaCount;
 
 	// hunters life goes to 0 and moves to hospital
 	totalScore = totalScore - huntCount;
@@ -552,9 +582,8 @@ int calculateScore(GameView gv) {
 }
 
 // calculates the health of a player and teleports player to respawn locations
-// INCOMPLETE
+// INCOMPLETE: Have dracula health to do
 static void calculateHealth(GameView gv, enum player player) {
-	
 	int i;
 	int round = GvGetRound(gv);
 	char *curMove;
@@ -562,14 +591,17 @@ static void calculateHealth(GameView gv, enum player player) {
 	PlaceId prevLoc;
 	// hunters health
 	if (player != PLAYER_DRACULA) {
+        printf("entered hunter hp calc loop\n");
 		for (i = 0; i < round; i++) {
 			// string of the whole player move, e.g "GMN.....""
 			curMove = getCurrentMove(gv->pastPlays, player, i);
 			// string of location, e.g "MN"
 			curLoc = GvGetPlayerLocation(gv, player);
-
+            printf("curMove string is %s\n", curMove);
 			// encounter Dracula, lose 4 hp and he loses 10 hp
+            //printf("curMove string is %d\n", curMove[i]);
 			if (curMove[4] == 'D') {
+                printf("hi\n");
 				gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
 				gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
 			}
@@ -599,15 +631,28 @@ static void calculateHealth(GameView gv, enum player player) {
 		}
 	}
 	// draculas health
-	/*
 	else {
+        printf("entered dracula hp calc loop\n");
 		for (i = 0; i < round; i++) {
 			curMove = getCurrentMove(gv->pastPlays, player, i);
 			curLoc = GvGetPlayerLocation(gv, player);
-			if (curMove[])
+            printf("curMove string is %s\n", curMove);
+            //printf("curMove string is %d\n", curMove[i]);
+            // if dracula is dead, break out of func and maybe have another condition outside
+            if (gv->health[player] <= 0) {
+                break;
+            }
+            // if dracula is at sea, lose 2 hp
+			if (placeIdToType(curLoc) == SEA) {
+                gv->health[player] -= LIFE_LOSS_SEA;
+            }
+            // if dracula is in castle dracula, gain 10 hp
+            if (curLoc == CASTLE_DRACULA) {
+                gv->health[player] += LIFE_GAIN_CASTLE_DRACULA;
+            }
 		}
 	}
-	*/
+	
 }
 
 bool isHunterDead(GameView gv, enum player player) {
