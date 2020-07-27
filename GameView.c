@@ -28,6 +28,7 @@ struct gameView {
 	int round;
 	int currentPlayer;
 	int score;
+	int location[NUM_REAL_PLACES];
 	int health[NUM_PLAYERS];
 	char *pastPlays;
 };
@@ -242,16 +243,16 @@ char *getCurrentMove(char *pastPlays, Player player, Round round)
 //}
 
 // calculates the score 
-int calculateScore(GameView gv, char *pastPlays) {
+int calculateScore(GameView gv) {
 
 	int totalScore = GAME_START_SCORE;
 	int draculaTurn = 0, i = 0, vampCount = 0;
-	char *string = strdup(pastPlays);
+	char *string = strdup(gv->pastPlays);
 
 	// loop through all the rounds, if dracula's turn does return something then increment
 	for (i = 0; i < GAME_START_SCORE; i++) {
-		if (getCurrentMove(pastPlays, PLAYER_DRACULA, i) != NULL) {
-			draculaTurn = draculaTurn + SCORE_LOSS_DRACULA_TURN;
+		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
+			draculaTurn += SCORE_LOSS_DRACULA_TURN;
 		}
 	}
 
@@ -259,12 +260,12 @@ int calculateScore(GameView gv, char *pastPlays) {
 
 	// for every round divisible by 13, check if vampire has matured
 	for (i = 0; i < GAME_START_SCORE; i = i + 13) {
-		if (getCurrentMove(pastPlays, PLAYER_DRACULA, i) != NULL) {
+		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			// this should be "DC?T.V." .. etc
-			char *move = getCurrentMove(pastPlays, PLAYER_DRACULA, i);
+			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
 			// if vampire has matured, then increment
 			if (move[5] == 'V') {
-				vampCount = vampCount * SCORE_LOSS_VAMPIRE_MATURES;
+				vampCount *= SCORE_LOSS_VAMPIRE_MATURES;
 			}
 		}
 	}
@@ -281,24 +282,43 @@ int calculateScore(GameView gv, char *pastPlays) {
 	return totalScore;
 }
 
-static void calculateHealth(GameView gv, char *pastPlays, Player player) {
+static void calculateHealth(GameView gv, enum player player) {
 	
 	int i, j;
+	char *curMove;
+	char *curLoc;
+	char *prevLoc;
 	// hunters health
 	if (player != PLAYER_DRACULA) {
-		for (i = 0; i < 3; i++) {
-				for (j = 0; j < GAME_START_SCORE; j++) {
-				char *move = getCurrentMove(pastPlays, i, j);
-				// encounter a trap, lose 2 hp
-				if (move[2] == 'T') {
-					gv->health[i] = gv->health[i] - LIFE_LOSS_TRAP_ENCOUNTER;
-				}
-				// encounter Dracula, lose 4 hp
-				if (move[4] == 'D') {
-					gv->health[i] = gv->health[i] - LIFE_LOSS_DRACULA_ENCOUNTER;
-				}
-				// same city/sea as the last turn
+		for (i = 0; i < GAME_START_SCORE; i++) {
+			// string of the whole player move, e.g "GMN.....""
+			curMove = getCurrentMove(gv->pastPlays, player, i);
+			// string of location, e.g "MN"
+			curLoc = GvGetPlayerLocation(gv->pastPlays, player);
+
+			// encounter Dracula, lose 4 hp
+			if (curMove[4] == 'D') {
+				gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
 			}
+			if (i > 0) {
+				// encounter a trap, lose 2 hp
+				if (curMove[2] == 'T') {
+					gv->health[player] -= LIFE_LOSS_TRAP_ENCOUNTER;
+				}
+				// stay at the same location as last turn, recover 3 hp
+				if (curLoc == prevLoc) {
+					gv->health[player] += LIFE_GAIN_REST;
+					// if health exceeds max pool, revert back to max pool
+					if (gv->health[player] > GAME_START_HUNTER_LIFE_POINTS) {
+						gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
+					}
+				}
+				// health goes under 0, teleport to hospital
+				if (gv->health[player] <= 0) {
+					gv->location[player] = ST_JOSEPH_AND_ST_MARY;
+				}
+			}
+			prevLoc = GvGetPlayerLocation(gv->pastPlays, player);
 		}
 	}
 
