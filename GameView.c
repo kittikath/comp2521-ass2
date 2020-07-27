@@ -22,6 +22,9 @@
 // add your own #includes here
 
 // TODO: ADD YOUR OWN STRUCTS HERE
+int calculateScore(GameView gv, enum player player);
+static void calculateHealth(GameView gv, enum player player);
+bool isHunterDead(GameView gv, enum player player);
 
 struct gameView {
 	// TODO: ADD FIELDS HERE
@@ -243,20 +246,22 @@ char *getCurrentMove(char *pastPlays, Player player, Round round)
 //}
 
 // calculates the score 
-int calculateScore(GameView gv) {
+int calculateScore(GameView gv, enum player player) {
 
 	int totalScore = GAME_START_SCORE;
-	int draculaTurn = 0, i = 0, vampCount = 0;
-	char *string = strdup(gv->pastPlays);
+	int draculaTurn = 0, i = 0, vampCount = 0, huntCount = 0;;
 
-	// loop through all the rounds, if dracula's turn does return something then increment
+	// loop through all the rounds
 	for (i = 0; i < GAME_START_SCORE; i++) {
+		// if dracula's turn exists, increment
 		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			draculaTurn += SCORE_LOSS_DRACULA_TURN;
 		}
+		// if a hunter is dead, increment
+		if (isHunterDead(gv->health, player) == true) {
+			huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
+		}
 	}
-
-	
 
 	// for every round divisible by 13, check if vampire has matured
 	for (i = 0; i < GAME_START_SCORE; i = i + 13) {
@@ -265,7 +270,7 @@ int calculateScore(GameView gv) {
 			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
 			// if vampire has matured, then increment
 			if (move[5] == 'V') {
-				vampCount *= SCORE_LOSS_VAMPIRE_MATURES;
+				vampCount += SCORE_LOSS_VAMPIRE_MATURES;
 			}
 		}
 	}
@@ -274,10 +279,10 @@ int calculateScore(GameView gv) {
 	totalScore = totalScore - draculaTurn;
 
 	// hunters life goes to 0 and moves to hospital
+	totalScore = totalScore - huntCount;
 
 	// vampire matures
 	totalScore = totalScore - vampCount;
-
 
 	return totalScore;
 }
@@ -314,15 +319,29 @@ static void calculateHealth(GameView gv, enum player player) {
 					}
 				}
 				// health goes under 0, teleport to hospital
-				if (gv->health[player] <= 0) {
+				if (isHunterDead(gv->health, player) == true) {
+					// if hunter is already in hospital, it means a new turn has started
+					if (curLoc == ST_JOSEPH_AND_ST_MARY) {
+						gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
+					}
 					gv->location[player] = ST_JOSEPH_AND_ST_MARY;
 				}
 			}
 			prevLoc = GvGetPlayerLocation(gv->pastPlays, player);
 		}
 	}
+}
 
+bool isHunterDead(GameView gv, enum player player) {
 
+	if (player != PLAYER_DRACULA) {
+		// if hunter is ded
+		if (gv->health[player] <= 0) {
+			return true;
+		}
+		else {
+			return false;
+		}
 }
 
 // TODO
