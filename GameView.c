@@ -442,7 +442,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 // if player has not made a turn at all, returns NULL
 char *getLastMove(GameView gv, Player player)
 {
-   // TODO: some testing needed
+   // TODO: DONE! - needs a bit of testing
    
    // player has not made a turn at all
    if (GvGetRound(gv) == 0 && GvGetPlayer(gv) <= player) {
@@ -470,7 +470,7 @@ char *getLastMove(GameView gv, Player player)
 // if the player has not made a move in the given round, it will return NULL
 char* getPlayerMove(char *pastPlays, Player player, Round round)
 {
-   // TODO: some testing needed
+   // TODO: DONE! - needs a bit of testing
 
    char *string = strdup(pastPlays);
    char delim[] = " ";
@@ -488,70 +488,34 @@ char* getPlayerMove(char *pastPlays, Player player, Round round)
    return move;
 }
 
-/*
-// returns an array of the play string for the given player
-// can be freed after use
-char *getAllPlays(char *pastPlays, Player player, int *numReturnedPlays)
-{
-   // TODO:
-   
-	int numPlays = GvGetRound(gv) + 1;
-	// if player has not yet made a move
-	if (GvGetPlayer(gv) <= player) {
-      numPlays--;
-    }
-
-   char *plays[7];
-   plays = malloc(numPlays * sizeof(plays));
-
-   char *string = strdup(pastPlays);
-   char delim[] = " ";
-   char *token;
-
-   // looks through the pastPlays string and adds relevant plays to the array
-   token = strtok(string, delim);
-   for (int i = 0, j = 0; token != NULL && j < numPlays; i++) {
-      // if token refers to the player
-      if (i % NUM_PLAYERS == player) {
-         strncpy(plays[i], token, 7);
-         j++;
-      }
-      token = strtok(NULL, delim);
-   }
-   
-   *numReturnedPlays = numPlays;
-   return plays;
-}
-*/
-
-
 // checks if a player has been to a certain place within the specified rounds
 bool placeMatch(char *pastPlays, Player player, PlaceId place,
                 Round roundStart, Round roundEnd)
 {
-    // TODO:  preliminary testing suggests it works, needs commenting
-    char *string = strdup(pastPlays);
-    char delim[] = " ";
-    char *move;
-    
-    // when to start matching the location
-    int start = roundStart * NUM_PLAYERS + player;
-    // when to stop matching the locations
-    int end = roundEnd * NUM_PLAYERS + player;
-    
-    // looks through the pastPlays string
-    move = strtok(string, delim);
-    for (int i = 0; i <= end && move != NULL; i++) {
-        // if the move made a player is considered
-        if (i >= start && i % NUM_PLAYERS == player) {
-            char *abbrev = strndup(move + 1, 2);
-            if (place == placeAbbrevToId(abbrev)) {
-                return true;
-            }
-        }
-        move = strtok(NULL, delim);
-    }
-    return false;
+   // TODO: DONE! - needs a bit of testing
+
+   char *string = strdup(pastPlays);
+   char delim[] = " ";
+   char *move;
+
+   // when to start matching the location
+   int start = roundStart * NUM_PLAYERS + player;
+   // when to stop matching the locations
+   int end = roundEnd * NUM_PLAYERS + player;
+
+   // looks through the pastPlays string
+   move = strtok(string, delim);
+   for (int i = 0; i <= end && move != NULL; i++) {
+      // if the move made a player is considered
+      if (i >= start && i % NUM_PLAYERS == player) {
+         char *abbrev = strndup(move + 1, 2);
+         if (place == placeAbbrevToId(abbrev)) {
+            return true;
+         }
+      }
+      move = strtok(NULL, delim);
+   }
+   return false;
 }
 
 
@@ -559,51 +523,53 @@ bool placeMatch(char *pastPlays, Player player, PlaceId place,
 // returns -1 if player has not been to the place
 Round placeBeenF(char *pastPlays, Player player, PlaceId place)
 {
-    // TODO: preliminary testing suggests it works, needs commenting
-    char *string = strdup(pastPlays);
-    char delim[] = " ";
-    char *move;
-    
-    // looks through the pastPlays string
-    move = strtok(string, delim);
-    for (int i = 0; move != NULL; i++) {
-        // if the move is made by the player 
-        if (i % NUM_PLAYERS == player) {
-            char *abbrev = strndup(move + 1, 2);
-            if (place == placeAbbrevToId(abbrev)) {
-                return i / NUM_PLAYERS;
-            }
-        }
-        move = strtok(NULL, delim);
-    }
-    return -1;
+   // TODO: DONE! - needs a bit of testing
+
+   char *string = strdup(pastPlays);
+   char delim[] = " ";
+   char *move;
+
+   // looks through the pastPlays string
+   move = strtok(string, delim);
+   for (int i = 0; move != NULL; i++) {
+      // if the move is made by the player 
+      if (i % NUM_PLAYERS == player) {
+         char *abbrev = strndup(move + 1, 2);
+         if (place == placeAbbrevToId(abbrev)) {
+            return i / NUM_PLAYERS;
+         }
+      }
+      move = strtok(NULL, delim);
+   }
+   return -1;
 }
 
 // returns which round the player has been to a certain place, last occurence
 // returns -1 if player has not been to the place
 Round placeBeenL(char *pastPlays, Player player, PlaceId place)
 {
-    // TODO: preliminary testing suggests it works, needs commenting
-    char *string = strdup(pastPlays);
-    char delim[] = " ";
-    char *move;
-    
-    Round last = -1;
-    
-    // looks through the pastPlays string
-    move = strtok(string, delim);
-    for (int i = 0; move != NULL; i++) {
-        // if the move is made by the player 
-        if (i % NUM_PLAYERS == player) {
-            char *abbrev = strndup(move + 1, 2);
-            // last occurence keeps updating
-            if (place == placeAbbrevToId(abbrev)) {
-                last = i;
-            }
-        }
-        move = strtok(NULL, delim);
-    }
-    return last / NUM_PLAYERS;
+   // TODO: DONE! - needs a bit of testing
+
+   char *string = strdup(pastPlays);
+   char delim[] = " ";
+   char *move;
+
+   Round last = -1;
+
+   // looks through the pastPlays string
+   move = strtok(string, delim);
+   for (int i = 0; move != NULL; i++) {
+      // if the move is made by the player 
+      if (i % NUM_PLAYERS == player) {
+         char *abbrev = strndup(move + 1, 2);
+         // last occurence keeps updating
+         if (place == placeAbbrevToId(abbrev)) {
+            last = i;
+         }
+      }
+      move = strtok(NULL, delim);
+   }
+   return last / NUM_PLAYERS;
 }
 
 // returns a bunch of strings
@@ -614,7 +580,8 @@ Round placeBeenL(char *pastPlays, Player player, PlaceId place)
 // helper function to find player move history
 PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves)
 {
-    // TODO: should be working
+    // TODO: DONE!
+    
 	int numMoveHistory = GvGetRound(gv) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
@@ -639,8 +606,9 @@ PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves)
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                         int *numReturnedMoves)
 {
-    // TODO: should be working
-	int numMoveHistory = ((strlen(gv->pastPlays) + 1) / (8 * NUM_PLAYERS)) + 1;
+    // TODO: DONE!
+    
+	int numMoveHistory = GvGetRound(gv) + 1;
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
       numMoveHistory--;
@@ -671,7 +639,8 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
 // helper function to find dracula location from dracula moves
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
 {
-   // could do without the 'refer' array
+   // TODO: DONE!
+   
    // this array helps to refer to dracula's past moves
    int refer[numMoves];
    
