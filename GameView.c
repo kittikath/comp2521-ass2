@@ -96,7 +96,7 @@ Player GvGetPlayer(GameView gv)
 
 int GvGetScore(GameView gv)
 {
-	// TODO: done - check implementation
+	// TODO: DONE!
 	
 	int totalScore = GAME_START_SCORE;
 	int turnLoss = 0;
@@ -222,8 +222,12 @@ PlaceId GvGetVampireLocation(GameView gv)
 	for (int i = startCheck; i <= endCheck; i++) {
 	   for (int j = 0; j < NUM_PLAYERS - 1; j++) {
 	      char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
-	      if (hunterMove != NULL && strncmp(hunterMove + 4, "V", 1) == 0) {
-	         return NOWHERE;
+	      if (hunterMove != NULL) {
+	         for (int k = 3; k < 7; k++) {
+	            if (hunterMove[k] == 'V') {
+	               return NOWHERE;
+	            }
+	         }
 	      }
 	   }
 	}
@@ -677,7 +681,7 @@ int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
    }
    
    // reading relevant characters for encounter
-   for (int i = 3; i < 8; i++) {
+   for (int i = 3; i < 7; i++) {
       if (move[i] == 'T') {
          health -= LIFE_LOSS_TRAP_ENCOUNTER;
       } else if (move[i] == 'D') {
@@ -706,7 +710,7 @@ int updateDraculaHealth(GameView gv, char *move, int health)
    // TODO: DONE!
    // checking hunter encounters
    if (move[0] != 'D') {
-      for (int i = 3; i < 8; i++) {
+      for (int i = 3; i < 7; i++) {
          if (move[i] == 'D') {
             health -= LIFE_LOSS_HUNTER_ENCOUNTER;
          }
