@@ -28,12 +28,7 @@
 // TODO: ADD YOUR OWN STRUCTS HERE
 
 struct gameView {
-	// TODO: ADD FIELDS HERE - added a few
-	// from darwin and kath's branch //
-	int score;
-	int location[NUM_PLAYERS];
-	int health[NUM_PLAYERS];
-	//////////////////////////////////
+	// TODO: DONE!
 	char *pastPlays;
 	Message *messages;
 };
@@ -43,15 +38,11 @@ struct gameView {
 
 char *getLastMove(GameView gv, Player player);
 char* getPlayerMove(char *pastPlays, Player player, Round round);
-//char *getAllPlays(char *pastPlays, Player player, int *numReturnedPlays);
+
 bool placeMatch(char *pastPlays, Player player, PlaceId Place,
                 Round roundStart, Round roundEnd);
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
-//static void calculateHealth(GameView gv, enum player player);
-void updateHunter(GameView gv, char *string, Player player);
-void updateDracula(GameView gv, char *string, Player player);
-bool isHunterDead(GameView gv, enum player player);
 
 int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc);
 int updateDraculaHealth(GameView gv, char *move, int health);
@@ -77,71 +68,6 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// adding necessary fields to GameView struct
 	new->pastPlays = pastPlays;
 	new->messages = messages;
-	
-	/*
-   int i, j = 0;
-
-    // for hunters
-    for (i = 0; i < 4; i++) {
-        new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
-        new->location[i] = NOWHERE;
-    }
-    // for dracula
-    new->health[4] = GAME_START_BLOOD_POINTS;
-    new->location[4] = NOWHERE;
-
-    // initial score
-    new->score = GAME_START_SCORE;
-    
-    
-    // maybe this block of code here does what you did below.
-    // could even merge updateHunter and updateDracula into one function and
-    // call it updatePlayer
-    // got to stop it before the currentPlayer
-    for (int i = 0; i < CURRENT_ROUND; i++) {
-      for (int j = 0; j < NUM_PLAYERS; j++) {
-         char *move = getPlayerMove(pastPlays, j, i);
-         if (j != PLAYER_DRACULA) {
-            updateHunter(new, move, j);
-         } else {
-            updateDracula(new, move, j);         
-         }
-      }
-    }
-
-   // all this does is just give updatehunter and updatedracula the pastPlays string in segments of 8 char strings
-    i = 0;
-    j = 0;
-    char string[8] = {};
-    while (i < strlen(pastPlays)) {
-        for (j = 0; j < 8; j++) {
-           string[j] = pastPlays[i];
-           i++;
-        }
-        // hi friends if you have read this i am literally losing my mind that getplayer does not work on my below
-        // functions so i have decided to hard code it for now good god i have depression
-        if(string[0] != 'D') {
-            // can probably shorten this so i am leaving this big if clusterheck
-            if(string[0] == 'G') {
-                updateHunter(new, string, PLAYER_LORD_GODALMING);
-            }
-            if(string[0] == 'S') {
-                updateHunter(new, string, PLAYER_DR_SEWARD);
-            }
-            if(string[0] == 'H') {
-                updateHunter(new, string, PLAYER_VAN_HELSING);
-            }
-            if(string[0] == 'M') {
-                updateHunter(new, string, PLAYER_MINA_HARKER);
-            }
-        }
-        else {
-            updateDracula(new, string, PLAYER_DRACULA);
-        }
-    }
-
-   //new->score = GvGetScore(new);
-   */
    
 	return new;
 }
@@ -173,58 +99,34 @@ int GvGetScore(GameView gv)
 	// TODO: done - check implementation
 	
 	int totalScore = GAME_START_SCORE;
-	int round = GvGetRound(gv);
-	int i;
-	int draculaCount = 0, vampCount = 0, huntCount = 0;
+	int turnLoss = 0;
+	int vampireLoss = 0;
+	int hunterLoss = 0;
+	int totalLoss = 0;
 
-	// loop through all the rounds
-	for (i = 0; i < round; i++) {
-		// if dracula's turn exists, increment
-		if (getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
-			draculaCount += SCORE_LOSS_DRACULA_TURN;
-		}
-	}
+   // loop through all the rounds
+   for (int i = 0; i <= GvGetRound(gv); i++) {
+      char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
+      // if dracula's turn exists, increment score loss
+      if (move != NULL) {
+         turnLoss += SCORE_LOSS_DRACULA_TURN;
+         // check if vampire matures
+         if (i % 13 == 6 && move[5] == 'V') {
+            vampireLoss += SCORE_LOSS_VAMPIRE_MATURES;
+         }
+      }
+   }
+
+   hunterLoss = hunterDeathCount(gv) * SCORE_LOSS_HUNTER_HOSPITAL;
    
-   huntCount = hunterDeathCount(gv) * SCORE_LOSS_HUNTER_HOSPITAL;
-   
-   /*
-	// loop through all the rounds
-	for (i = 0; i < round; i++) {
-        // if hunter is found to be dead, increment
-        if (isHunterDead(gv, i) == true) {
-            huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
-        }
-	}
-   */
-   
-	// for every round divisible by 13, check if vampire has matured
-	for (i = 0; i < round; i = i + 13) {
-		if (getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
-			// this should be "DC?T.V." .. etc
-			char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
-			// if vampire has matured, then increment
-			if (move[5] == 'V') {
-				vampCount += SCORE_LOSS_VAMPIRE_MATURES;
-			}
-		}
-	}
+   totalLoss = turnLoss + vampireLoss + hunterLoss;
 
-	// dracula finishes his turn
-	totalScore = totalScore - draculaCount;
-
-	// hunters life goes to 0 and moves to hospital
-	totalScore = totalScore - huntCount;
-
-	// vampire matures
-	totalScore = totalScore - vampCount;
-
-	return totalScore;
+	return totalScore - totalLoss;
 }
 
 int GvGetHealth(GameView gv, Player player)
 {
-	// TODO: needs to be fixed
-	//return gv->health[player];
+	// TODO: DONE!
 	
    int currentRound = GvGetRound(gv);
    int health;
@@ -243,14 +145,15 @@ int GvGetHealth(GameView gv, Player player)
             prevLoc = currLoc;      
          }
       }
+      // TODO: keep this commented code, might be handy/
       //if (health == 0 && GvGetPlayerLocation(gv, player) == HOSPITAL_PLACE) {
       //   health = GAME_START_HUNTER_LIFE_POINTS;
       //}
    } else {
       health = GAME_START_BLOOD_POINTS;
-      // loop through round
+      // loop through rounds
       for (int i = 0; i <= currentRound; i++) {
-         // loop through players
+         // loop through all players, dracula needs to check all moves
          for (int j = 0; j < NUM_PLAYERS; j++) {
             char *move = getPlayerMove(gv->pastPlays, j, i);
             if (move != NULL) {
@@ -268,25 +171,24 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
    
    char *move = getLastMove(gv, player);
    
+   // player has not made a turn
    if (move == NULL) {
       return NOWHERE;
    }
 
-   // for hunters
    if (player != PLAYER_DRACULA) {
       // if hunter has died
-      if (GvGetHealth(gv, player) <= 0) {
+      if (GvGetHealth(gv, player) == 0) {
          return HOSPITAL_PLACE;
       }
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
-   // for dracula
    } else {
       int numLocs = 0;
       bool canFree = true;
-      PlaceId *draculaLocation = GvGetLocationHistory(gv, player,
-                                                      &numLocs, &canFree);
-      PlaceId draculaPlace = draculaLocation[numLocs - 1];
+      PlaceId *draculaLocation = GvGetLastLocations(gv, player, 1,
+                                                   &numLocs, &canFree);
+      PlaceId draculaPlace = draculaLocation[0];
       free(draculaLocation);      
       return draculaPlace;
    }
@@ -320,9 +222,7 @@ PlaceId GvGetVampireLocation(GameView gv)
 	for (int i = startCheck; i <= endCheck; i++) {
 	   for (int j = 0; j < NUM_PLAYERS - 1; j++) {
 	      char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
-	      if (hunterMove == NULL) {
-	         break;
-	      } else if (strncmp(hunterMove + 4, "V", 1) == 0) {
+	      if (hunterMove != NULL && strncmp(hunterMove + 4, "V", 1) == 0) {
 	         return NOWHERE;
 	      }
 	   }
@@ -343,7 +243,7 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested
+	// TODO: DONE!
    *canFree = true;
 
    return playerMoveHistory(gv, player, numReturnedMoves);
@@ -352,7 +252,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: done but not tested
+	// TODO: DONE!
 	*canFree = true;
 
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
@@ -361,36 +261,43 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
                               int *numReturnedLocs, bool *canFree)
 {
-   // TODO: done, needs testing
+   // TODO: DONE!
    *canFree = true;
 
-   PlaceId *moveHistory = playerMoveHistory(gv, player, numReturnedLocs);
+   PlaceId *locationHistory = playerMoveHistory(gv, player, numReturnedLocs);
 
    if (player == PLAYER_DRACULA) {
-      findDraculaLocation(*numReturnedLocs, moveHistory);
+      findDraculaLocation(*numReturnedLocs, locationHistory);
    }
-   return moveHistory;
+   return locationHistory;
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-   // TODO: not done, needs to get ALL locations, then cull
+   // TODO: DONE!
    *canFree = true;
    
-   PlaceId *lastMoves;
-   
+   PlaceId *lastLocs;
    if (player != PLAYER_DRACULA) {
-      lastMoves = playerLastMoves(gv, player, numLocs, numReturnedLocs);
+      lastLocs = playerLastMoves(gv, player, numLocs, numReturnedLocs);
+   // dracula's moves need to be referenced
    } else {
-      lastMoves = playerMoveHistory(gv, player, numReturnedLocs);   
-      findDraculaLocation(*numReturnedLocs, lastMoves);
-      // setting the number of last moves available
-      if (*numReturnedLocs > numLocs) {
+      PlaceId *locationHistory = GvGetLocationHistory(gv, player,
+                                                      numReturnedLocs, canFree);
+      // shortening the locationHistory array
+      if (numLocs < *numReturnedLocs) {
+         lastLocs = malloc(numLocs * sizeof(*lastLocs));
+         for (int i = 0; i < numLocs; i++) {
+            lastLocs[i] = locationHistory[*numReturnedLocs - numLocs + i];         
+         }
+         free(locationHistory);
          *numReturnedLocs = numLocs;
+      } else {
+         return locationHistory;
       }
-   }   
-   return lastMoves;
+   }
+   return lastLocs;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -408,7 +315,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: done?
 	
 	Map europe = MapNew();
 	
@@ -727,24 +634,27 @@ void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
 
 //------------------------- score helper function ------------------------------
 
+// counts the total number of hunter deaths during the game
 int hunterDeathCount(GameView gv)
 {
-   int currentRound = GvGetRound(gv);
-   
+   // TODO: DONE!
+      
    int deathCount = 0;
    
+   // loops through hunter
    for (int j = 0; j < NUM_PLAYERS - 1; j++) {
       int health = GAME_START_HUNTER_LIFE_POINTS;
       PlaceId prevLoc = NOWHERE;
       PlaceId currLoc;
-      // loop through all player moves/encounters
-      for (int i = 0; i <= currentRound; i++) {
+      // checks when the health goes to zero
+      for (int i = 0; i <= GvGetRound(gv); i++) {
          char *move = getPlayerMove(gv->pastPlays, j, i);
          if (move != NULL) {
             char *abbrev = strndup(move + 1, 2);
             currLoc = placeAbbrevToId(abbrev);         
             health = updateHunterHealth(move, health, prevLoc, currLoc);
             prevLoc = currLoc;
+            // increment count if hunter dies
             if (health == 0) {
                deathCount++;
             }
@@ -754,55 +664,19 @@ int hunterDeathCount(GameView gv)
    return deathCount;
 }
 
-//--------------------- player health new implementation -----------------------
-
-/*
-int GvGetHealth(GameView gv, Player player)
-{
-   int curretRound = GvGetRound(gv);
-   
-   if (player != PLAYER_DRACULA) {
-      int health = GAME_START_HUNTER_LIFE_POINTS;
-      PlaceId prevLoc = NOWHERE;
-      PlaceId currLoc;
-      // loop through all player moves/encounters
-      for (int i = 0; i <= currentRound; i++) {
-         char *move = getPlayerMove(gv->pastPlays, player, i);
-         char *abbrev = strndup(move + 1, 2);
-         currLoc = placeAbbrevToId(abbrev);
-         if (move != NULL) {
-            health = updateHunterHealth(move, health, prevLoc, currLoc);       
-         }
-         prevLoc = currLoc;
-      }
-      if (health == 0 && GvGetPlayerLocation(player) == HOSPITAL_PLACE) {
-         health = GAME_START_HUNTER_LIFE_POINTS;
-      }
-      return health;
-   } else {
-      int health = GAME_START_BLOOD_POINTS;
-      for (int i = 0; i <= currentRound; i++) {
-         char *move = getPlayerMove(gv->pastPlays, player, i);
-         if (move != NULL) {
-            health = updateHunterHealth(move, health, prevLoc, currLoc);       
-         }
-      }
-      return health;
-   }
-}
-*/
-
-//------------------ health and location helper functions ----------------------
+//------------------------ health helper functions -----------------------------
 
 
-
+// updates the hunter's health according to the encounters in the turn
 int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
 {
-   // reset health
+   // TODO: DONE!
+   // reset health (respawn at hospital)
    if (health == 0) {
       health = GAME_START_HUNTER_LIFE_POINTS;
    }
    
+   // reading relevant characters for encounter
    for (int i = 3; i < 8; i++) {
       if (move[i] == 'T') {
          health -= LIFE_LOSS_TRAP_ENCOUNTER;
@@ -810,10 +684,13 @@ int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
          health -= LIFE_LOSS_DRACULA_ENCOUNTER;
       }
    }
+   
+   // hunter at rest
    if (prevLoc == currLoc) {
       health += LIFE_GAIN_REST;   
    }
    
+   // capping hunter hp
    if (health > GAME_START_HUNTER_LIFE_POINTS) {
       health = GAME_START_HUNTER_LIFE_POINTS;
    } else if (health < 0) {
@@ -823,9 +700,10 @@ int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
 }
 
 
-
+// updates the dracula's health according to the encounters during the turn
 int updateDraculaHealth(GameView gv, char *move, int health)
 {
+   // TODO: DONE!
    // checking hunter encounters
    if (move[0] != 'D') {
       for (int i = 3; i < 8; i++) {
@@ -833,7 +711,8 @@ int updateDraculaHealth(GameView gv, char *move, int health)
             health -= LIFE_LOSS_HUNTER_ENCOUNTER;
          }
       }
-   } else {   
+   // checks for castle dracula and if dracula is at sea
+   } else {
       int numReturnedLocs = 0;
       bool canFree = true;
       PlaceId *location = GvGetLastLocations(gv, PLAYER_DRACULA, 1,
@@ -846,156 +725,4 @@ int updateDraculaHealth(GameView gv, char *move, int health)
       free(location);
    }
    return health;
-}
-
-
-
-
-// reads in a string of play, and updates health and location for hunters
-void updateHunter(GameView gv, char *string, Player player) {
-
-    PlaceId curLoc = GvGetPlayerLocation(gv, player);
-
-    for (int i = 3; i < 8; i++) {
-        // encounter Dracula, lose 4 hp and he loses 10 hp
-        if (string[i] == 'D') {
-            gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
-            gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
-        }
-        // encounter a trap, lose 2 hp
-        if (string[i] == 'T') {
-            gv->health[player] -= LIFE_LOSS_TRAP_ENCOUNTER;
-        }
-    }
-    // if location of player matches 
-    if (gv->location[player] == curLoc) {
-        gv->health[player] += LIFE_GAIN_REST;
-            // if health exceeds max pool, revert back to max pool
-        if (gv->health[player] > GAME_START_HUNTER_LIFE_POINTS) {
-            gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
-        }
-        gv->location[player] = curLoc;
-    }
-    // health goes under 0, teleport to hospital
-    if (isHunterDead(gv, player) == true) {
-        // if hunter is already in hospital, it means a new turn has started
-        if (curLoc == HOSPITAL_PLACE) {
-            gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
-        }
-        gv->location[player] = HOSPITAL_PLACE;
-    }
-}
-
-// reads in a string of play, and updates string and location for dracula
-void updateDracula(GameView gv, char *string, Player player) {
-
-    PlaceId curLoc = GvGetPlayerLocation(gv, player);
-
-    /*
-    // if dracula is dead, break out of func and maybe have another condition outside
-    if (gv->health[player] <= 0) {
-        break;
-    }
-    */
-
-    // if dracula is at sea, lose 2 hp
-    if (placeIdToType(curLoc) == SEA) {
-        gv->health[player] -= LIFE_LOSS_SEA;
-    }
-    // if dracula is in castle dracula, gain 10 hp
-    if (curLoc == CASTLE_DRACULA) {
-        gv->health[player] += LIFE_GAIN_CASTLE_DRACULA;
-    }
-}
-
-
-/*
-// calculates the health of a player and teleports player to respawn locations
-// INCOMPLETE: Have dracula health to do
-static void calculateHealth(GameView gv, enum player player) {
-	int i;
-	int round = GvGetRound(gv);
-	char *curMove;
-	PlaceId curLoc;
-	PlaceId prevLoc;
-	// hunters health
-	if (player != PLAYER_DRACULA) {
-        printf("entered hunter hp calc loop\n");
-		for (i = 0; i < round; i++) {
-			// string of the whole player move, e.g "GMN.....""
-			curMove = getPlayerMove(gv->pastPlays, player, i);
-			// string of location, e.g "MN"
-			curLoc = GvGetPlayerLocation(gv, player);
-            printf("curMove string is %s\n", curMove);
-			// encounter Dracula, lose 4 hp and he loses 10 hp
-			if (curMove[4] == 'D') {
-                printf("hi\n");
-				gv->health[player] -= LIFE_LOSS_DRACULA_ENCOUNTER;
-				gv->health[PLAYER_DRACULA] -= LIFE_LOSS_HUNTER_ENCOUNTER;
-			}
-			if (i > 0) {
-				// encounter a trap, lose 2 hp
-				if (curMove[2] == 'T') {
-					gv->health[player] -= LIFE_LOSS_TRAP_ENCOUNTER;
-				}
-				// stay at the same location as last turn, recover 3 hp
-				if (curLoc == prevLoc) {
-					gv->health[player] += LIFE_GAIN_REST;
-					// if health exceeds max pool, revert back to max pool
-					if (gv->health[player] > GAME_START_HUNTER_LIFE_POINTS) {
-						gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
-					}
-				}
-				// health goes under 0, teleport to hospital
-				if (isHunterDead(gv, player) == true) {
-					// if hunter is already in hospital, it means a new turn has started
-					if (curLoc == ST_JOSEPH_AND_ST_MARY) {
-						gv->health[player] = GAME_START_HUNTER_LIFE_POINTS;
-					}
-					gv->location[player] = ST_JOSEPH_AND_ST_MARY;
-				}
-			}
-			prevLoc = GvGetPlayerLocation(gv, player);
-		}
-	}
-	// draculas health
-	else {
-        printf("entered dracula hp calc loop\n");
-		for (i = 0; i < round; i++) {
-			curMove = getPlayerMove(gv->pastPlays, player, i);
-			curLoc = GvGetPlayerLocation(gv, player);
-            printf("curMove string is %s\n", curMove);
-            //printf("curMove string is %d\n", curMove[i]);
-            // if dracula is dead, break out of func and maybe have another condition outside
-            if (gv->health[player] <= 0) {
-                break;
-            }
-            // if dracula is at sea, lose 2 hp
-			if (placeIdToType(curLoc) == SEA) {
-                gv->health[player] -= LIFE_LOSS_SEA;
-            }
-            // if dracula is in castle dracula, gain 10 hp
-            if (curLoc == CASTLE_DRACULA) {
-                gv->health[player] += LIFE_GAIN_CASTLE_DRACULA;
-            }
-		}
-	}
-	
-}
-*/
-
-bool isHunterDead(GameView gv, enum player player) {
-
-	if (player != PLAYER_DRACULA) {
-		// if hunter is ded
-		if (gv->health[player] <= 0) {
-            // set health to 0
-            gv->health[player] = 0;
-			return true;
-		}
-		return false;
-	}
-	else {
-		return false;
-	}
 }
