@@ -39,8 +39,8 @@ struct gameView {
 
 // helper functions
 
-char *getPlayerMove(char *pastPlays, Player player, Round round);
-char *getCurrentMove(char *pastPlays, Player player, Round round);
+char *getLastMove(GameView gv, Player player);
+char* getPlayerMove(char *pastPlays, Player player, Round round);
 //char *getAllPlays(char *pastPlays, Player player, int *numReturnedPlays);
 bool placeMatch(char *pastPlays, Player player, PlaceId Place,
                 Round roundStart, Round roundEnd);
@@ -175,7 +175,7 @@ int GvGetScore(GameView gv)
 	// loop through all the rounds
 	for (i = 0; i < round; i++) {
 		// if dracula's turn exists, increment
-		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
+		if (getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			draculaCount += SCORE_LOSS_DRACULA_TURN;
 		}
 	}
@@ -190,9 +190,9 @@ int GvGetScore(GameView gv)
 
 	// for every round divisible by 13, check if vampire has matured
 	for (i = 0; i < round; i = i + 13) {
-		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
+		if (getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
 			// this should be "DC?T.V." .. etc
-			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
+			char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
 			// if vampire has matured, then increment
 			if (move[5] == 'V') {
 				vampCount += SCORE_LOSS_VAMPIRE_MATURES;
@@ -222,41 +222,37 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
    // TODO: DONE!
    
-   int currentRound = GvGetRound(gv);
+   char *move = getLastMove(gv, player);
    
-   // player has not made a turn
-   if (currentRound == 0 && GvGetPlayer(gv) <= player) {
+   if (move == NULL) {
       return NOWHERE;
    }
 
    // for hunters
    if (player != PLAYER_DRACULA) {
-       //printf("hunterplayerloc\n");
+      // if hunter has died
       if (GvGetHealth(gv, player) <= 0) {
          return HOSPITAL_PLACE;
       }
-      char *move = getPlayerMove(gv->pastPlays, player, currentRound);
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
    // for dracula
    } else {
-       //printf("dracplayerloc\n");
       int numLocs = 0;
       bool canFree = true;
-      PlaceId *draculaLocation = GvGetLocationHistory(gv, player, &numLocs, &canFree);
+      PlaceId *draculaLocation = GvGetLocationHistory(gv, player,
+                                                      &numLocs, &canFree);
       PlaceId draculaPlace = draculaLocation[numLocs - 1];
-      if (canFree == true) {
-         free(draculaLocation);
-      }
+      free(draculaLocation);      
       return draculaPlace;
    }
 }
 
 PlaceId GvGetVampireLocation(GameView gv)
 {
-	// TODO: done but edge cases still needs to be tested.
+	// TODO: done - but needs testing
 
-   // no vampires after 6th round in each cycle
+   // no vampires after 6th round in each cycle or at start of cycle
    if (GvGetRound(gv) % 13 > 6 || GvGetRound(gv) % 13 == 0) {
       return NOWHERE;
    }
@@ -265,7 +261,7 @@ PlaceId GvGetVampireLocation(GameView gv)
    PlaceId vampireLocation;
    
    // if vampire is spawned
-   char *spawnMove = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, roundSpawn);
+   char *spawnMove = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, roundSpawn);
    if (strncmp(spawnMove + 4, "V", 1) == 0) {
       char *abbrev = strndup(spawnMove + 1, 2);
       vampireLocation = placeAbbrevToId(abbrev);   
@@ -277,10 +273,9 @@ PlaceId GvGetVampireLocation(GameView gv)
 	int startCheck = roundSpawn + 1;
 	int endCheck = roundSpawn + 6;
 	
-	// if vampire is vanquished
 	for (int i = startCheck; i <= endCheck; i++) {
 	   for (int j = 0; j < NUM_PLAYERS - 1; j++) {
-	      char *hunterMove = getCurrentMove(gv->pastPlays, j, i);
+	      char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
 	      if (hunterMove == NULL) {
 	         break;
 	      } else if (strncmp(hunterMove + 4, "V", 1) == 0) {
@@ -377,41 +372,39 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 //------------------------- general helper functions ---------------------------
 
-// returns the string containing a player's move in a given round. if the input
-// round exceeds current round, last move made by player is returned
+// returns the string containing a player's last move
+// if player has not made a turn at all, returns NULL
 // returns a string formatted as such "GMN...."
-char *getPlayerMove(char *pastPlays, Player player, Round round)
-   {
+char *getLastMove(GameView gv, Player player)
+{
    // TODO: some testing needed
+   
+   // player has not made a turn at all
+   if (GvGetRound(gv) == 0 && GvGetPlayer(gv) <= player) {
+      return NULL;
+   }
 
-   char *string = strdup(pastPlays);
+   char *string = strdup(gv->pastPlays);
    char delim[] = " ";
    char *token;
    char *move;
 
-   // the number of times strtok tokenises to reach the requested move
-   int limit = round * NUM_PLAYERS + player;
-
-   // looks through the pastPlays string until requested move is reached
-   // or end is reached
+   // looks through the pastPlays string until the end
    token = strtok(string, delim);
-   for (int i = 0; i <= limit && token != NULL; i++) {
+   for (int i = 0; token != NULL; i++) {
       // if move is made by player, it is updated
       if (i % NUM_PLAYERS == player) {
          move = token;
       }
       token = strtok(NULL, delim);
    }
-   
-   // check to make sure function is used correctly
-   assert(move != NULL);
    return move;
 }
 
 // returns the string containing a player's move in a given round. if the
 // player has not made a move in the given round, it will return NULL
 // returns a string formatted as such "GMN...."
-char *getCurrentMove(char *pastPlays, Player player, Round round)
+char* getPlayerMove(char *pastPlays, Player player, Round round)
 {
    // TODO: some testing needed
 
@@ -467,9 +460,6 @@ char *getAllPlays(char *pastPlays, Player player, int *numReturnedPlays)
 }
 */
 
-
-// the following functions could be implemented with the getPlayerMove helper,
-// but would be a lot less efficient as a result
 
 // checks if a player has been to a certain place within the specified rounds
 bool placeMatch(char *pastPlays, Player player, PlaceId place,
@@ -732,7 +722,7 @@ static void calculateHealth(GameView gv, enum player player) {
         printf("entered hunter hp calc loop\n");
 		for (i = 0; i < round; i++) {
 			// string of the whole player move, e.g "GMN.....""
-			curMove = getCurrentMove(gv->pastPlays, player, i);
+			curMove = getPlayerMove(gv->pastPlays, player, i);
 			// string of location, e.g "MN"
 			curLoc = GvGetPlayerLocation(gv, player);
             printf("curMove string is %s\n", curMove);
@@ -771,7 +761,7 @@ static void calculateHealth(GameView gv, enum player player) {
 	else {
         printf("entered dracula hp calc loop\n");
 		for (i = 0; i < round; i++) {
-			curMove = getCurrentMove(gv->pastPlays, player, i);
+			curMove = getPlayerMove(gv->pastPlays, player, i);
 			curLoc = GvGetPlayerLocation(gv, player);
             printf("curMove string is %s\n", curMove);
             //printf("curMove string is %d\n", curMove[i]);
