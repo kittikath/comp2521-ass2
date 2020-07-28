@@ -22,6 +22,8 @@
 // add your own #includes here
 
 #define PLAY_LEN 8
+#define FALSE 0
+#define TRUE 1
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
@@ -116,10 +118,10 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
 
-    // for hunters
-    calculateHealth(new, player);
+   // for hunters
+   // calculateHealth(new, player);
 
-    printf("pastplays string is %s\n", string);
+   printf("pastplays string is %s\n", string);
 
 	printf("score is: %d\n", calculateScore(new));
 
@@ -285,9 +287,9 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 PlaceId *GvGetReachable(GameView gv, Player player, Round round,
                         PlaceId from, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	// TODO: Need to include rail case. Needs testing.
+	return GvGetReachableByType(gv, player, round, from, true, true, true, 
+	                     numReturnedLocs);
 }
 
 PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
@@ -295,8 +297,70 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               bool boat, int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	
+	Map europe = MapNew();
+	
+	int i;
+	
+	int reachable[NUM_REAL_PLACES];
+	
+	for (i = 0; i < NUM_REAL_PLACES; i++) {
+	   reachable[i] = FALSE;
+	}
+	
+	reachable[from] = TRUE;
+	
+	// Determining if adjacent and transport type ROAD
+	if (road) {
+	   for (i = 0; i < NUM_REAL_PLACES; i++) {
+	      for (ConnList curr = MapGetConnections(europe, from); curr != NULL; 
+	           curr = curr->next) {
+	         if (curr->type == ROAD && curr->p == reachable[i]) {
+	            reachable[i] = TRUE;
+	         }
+	      }
+	   }
+	}
+	
+	// Determining if adjacent and transport type BOAT
+	if (boat) {
+	   for (i = 0; i < NUM_REAL_PLACES; i++) {
+	      for (ConnList curr = MapGetConnections(europe, from); curr != NULL; 
+	           curr = curr->next) {
+	         if (curr->type == BOAT && curr->p == reachable[i]) {
+	            reachable[i] = TRUE;
+	         }
+	      }
+	   }
+	}
+	
+	// Dracula case
+	if (player == PLAYER_DRACULA) {
+	   reachable[ST_JOSEPH_AND_ST_MARY] = FALSE;
+	}
+	
 	*numReturnedLocs = 0;
-	return NULL;
+	
+	// Count number of locations reachable
+	for (i = 0; i < NUM_REAL_PLACES; i++) {
+	   if (reachable[i] == TRUE) {
+	      (*numReturnedLocs)++;
+	   }
+	}
+	
+	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(*connections));
+	
+	int index;
+	
+	// Returning name of place
+	for (i = 0; i < NUM_REAL_PLACES; i++) {
+	   if (reachable[i] == TRUE) {
+	      connections[index] = i;
+	      index++;
+	   }
+	}
+	
+	return connections;
 }
 
 ////////////////////////////////////////////////////////////////////////
