@@ -220,7 +220,7 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-   // TODO: DONE!
+   // TODO: DONE! - needs testing
    
    char *move = getLastMove(gv, player);
    
@@ -250,7 +250,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 
 PlaceId GvGetVampireLocation(GameView gv)
 {
-	// TODO: done - but needs testing
+	// TODO: DONE! - but needs testing
 
    // no vampires after 6th round in each cycle or at start of cycle
    if (GvGetRound(gv) % 13 > 6 || GvGetRound(gv) % 13 == 0) {
@@ -372,9 +372,8 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 //------------------------- general helper functions ---------------------------
 
-// returns the string containing a player's last move
+// returns a 7-letter string containing a player's last move
 // if player has not made a turn at all, returns NULL
-// returns a string formatted as such "GMN...."
 char *getLastMove(GameView gv, Player player)
 {
    // TODO: some testing needed
@@ -401,9 +400,8 @@ char *getLastMove(GameView gv, Player player)
    return move;
 }
 
-// returns the string containing a player's move in a given round. if the
-// player has not made a move in the given round, it will return NULL
-// returns a string formatted as such "GMN...."
+// returns a 7-letter string containing a player's move in a given round
+// if the player has not made a move in the given round, it will return NULL
 char* getPlayerMove(char *pastPlays, Player player, Round round)
 {
    // TODO: some testing needed
