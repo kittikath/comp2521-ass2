@@ -69,7 +69,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// TODO: DONE!
 	GameView new = malloc(sizeof(*new));
 	if (new == NULL) {
-      printf(stderr, "Couldn't allocate GameView!\n");
+      fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -141,7 +141,7 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
     new->score = calculateScore(new);
->>>>>>> 153445f1809245a370c198f7a01d067bc2a03d1e
+    
 	return new;
 }
 
