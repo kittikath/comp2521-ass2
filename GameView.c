@@ -88,6 +88,23 @@ GameView GvNew(char *pastPlays, Message messages[])
 
     // initial score
     new->score = GAME_START_SCORE;
+    
+    
+    /* maybe this block of code here does what you did below.
+    // could even merge updateHunter and updateDracula into one function and
+    // call it updatePlayer
+    // got to stop it before the currentPlayer
+    for (int i = 0; i < CURRENT_ROUND; i++) {
+      for (int j = 0; j < NUM_PLAYERS; j++) {
+         char *move = getPlayerMove(pastPlays, j, i);
+         if (j != PLAYER_DRACULA) {
+            updateHunter(new, move, j);
+         } else {
+            updateDracula(new, move, j);         
+         }
+      }
+    }
+    */
 
    
    // all this does is just give updatehunter and updatedracula the pastPlays string in segments of 8 char strings
@@ -160,7 +177,7 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-   // TODO: DONE! needs testing
+   // TODO: DONE!
    
    int currentRound = GvGetRound(gv);
    
@@ -172,6 +189,9 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
    // for hunters
    if (player != PLAYER_DRACULA) {
        //printf("hunterplayerloc\n");
+      if (GvGetHealth(gv, player) <= 0) {
+         return HOSPITAL_PLACE;
+      }
       char *move = getPlayerMove(gv->pastPlays, player, currentRound);
       char *abbrev = strndup(move + 1, 2);
       return placeAbbrevToId(abbrev);
@@ -543,6 +563,8 @@ void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
    }
 }
 
+//------------------------- score helper function ------------------------------
+
 // calculates the score and returns it
 int calculateScore(GameView gv) {
 
@@ -590,6 +612,8 @@ int calculateScore(GameView gv) {
 
 	return totalScore;
 }
+
+//------------------ health and location helper functions ----------------------
 
 // reads in a string of play, and updates health and location for hunters
 void updateHunter(GameView gv, char *string, Player player) {
