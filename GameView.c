@@ -45,7 +45,6 @@ bool placeMatch(char *pastPlays, Player player, PlaceId Place,
                 Round roundStart, Round roundEnd);
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
-int calculateScore(GameView gv);
 //static void calculateHealth(GameView gv, enum player player);
 void updateHunter(GameView gv, char *string, Player player);
 void updateDracula(GameView gv, char *string, Player player);
@@ -137,7 +136,7 @@ GameView GvNew(char *pastPlays, Message messages[])
             updateDracula(new, string, PLAYER_DRACULA);
         }
     }
-    new->score = calculateScore(new);
+    new->score = GvGetScore(new);
 	return new;
 }
 
@@ -165,8 +164,51 @@ Player GvGetPlayer(GameView gv)
 
 int GvGetScore(GameView gv)
 {
-	// TODO: needs to be fixed
-	return gv->score;
+	// TODO: done - check implementation
+	
+	int totalScore = GAME_START_SCORE;
+	int round = GvGetRound(gv);
+	int i;
+	int draculaCount = 0, vampCount = 0, huntCount = 0;
+
+	// loop through all the rounds
+	for (i = 0; i < round; i++) {
+		// if dracula's turn exists, increment
+		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
+			draculaCount += SCORE_LOSS_DRACULA_TURN;
+		}
+	}
+
+	// loop through all the rounds
+	for (i = 0; i < round; i++) {
+        // if hunter is found to be dead, increment
+        if (isHunterDead(gv, i) == true) {
+            huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
+        }
+	}
+
+	// for every round divisible by 13, check if vampire has matured
+	for (i = 0; i < round; i = i + 13) {
+		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
+			// this should be "DC?T.V." .. etc
+			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
+			// if vampire has matured, then increment
+			if (move[5] == 'V') {
+				vampCount += SCORE_LOSS_VAMPIRE_MATURES;
+			}
+		}
+	}
+
+	// dracula finishes his turn
+	totalScore = totalScore - draculaCount;
+
+	// hunters life goes to 0 and moves to hospital
+	totalScore = totalScore - huntCount;
+
+	// vampire matures
+	totalScore = totalScore - vampCount;
+
+	return totalScore;
 }
 
 int GvGetHealth(GameView gv, Player player)
@@ -565,53 +607,6 @@ void findDraculaLocation(int numMoves, PlaceId *draculaMoves)
 
 //------------------------- score helper function ------------------------------
 
-// calculates the score and returns it
-int calculateScore(GameView gv) {
-
-	int totalScore = GAME_START_SCORE;
-	int round = GvGetRound(gv);
-	int i;
-	int draculaCount = 0, vampCount = 0, huntCount = 0;
-
-	// loop through all the rounds
-	for (i = 0; i < round; i++) {
-		// if dracula's turn exists, increment
-		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
-			draculaCount += SCORE_LOSS_DRACULA_TURN;
-		}
-	}
-
-	// loop through all the rounds
-	for (i = 0; i < round; i++) {
-        // if hunter is found to be dead, increment
-        if (isHunterDead(gv, i) == true) {
-            huntCount += SCORE_LOSS_HUNTER_HOSPITAL;
-        }
-	}
-
-	// for every round divisible by 13, check if vampire has matured
-	for (i = 0; i < round; i = i + 13) {
-		if (getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i) != NULL) {
-			// this should be "DC?T.V." .. etc
-			char *move = getCurrentMove(gv->pastPlays, PLAYER_DRACULA, i);
-			// if vampire has matured, then increment
-			if (move[5] == 'V') {
-				vampCount += SCORE_LOSS_VAMPIRE_MATURES;
-			}
-		}
-	}
-
-	// dracula finishes his turn
-	totalScore = totalScore - draculaCount;
-
-	// hunters life goes to 0 and moves to hospital
-	totalScore = totalScore - huntCount;
-
-	// vampire matures
-	totalScore = totalScore - vampCount;
-
-	return totalScore;
-}
 
 //------------------ health and location helper functions ----------------------
 
