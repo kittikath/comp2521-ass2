@@ -66,7 +66,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// TODO: DONE!
 	GameView new = malloc(sizeof(*new));
 	if (new == NULL) {
-		fprintf(stderr, "Couldn't allocate GameView!\n");
+      printf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -74,13 +74,13 @@ GameView GvNew(char *pastPlays, Message messages[])
 	new->pastPlays = pastPlays;
 	new->messages = messages;
 	
-    int i, j = 0;
-    //int round = GvGetRound(new);
+   int i, j = 0;
+   //int round = GvGetRound(new);
 
-    // if pastplays is empty
-	if (strlen(pastPlays) == 0) {
+   // if pastplays is empty
+   if (strlen(pastPlays) == 0) {
 		// for hunters
-		for (i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 			new->health[i] = GAME_START_HUNTER_LIFE_POINTS;
 			printf("health of hunter: %d\n", new->health[i]);
 			new->location[i] = NOWHERE;
@@ -104,19 +104,19 @@ GameView GvNew(char *pastPlays, Message messages[])
         }
     }
     */
-    calculateHealth(new, 1);
+	calculateHealth(new, 1);
 
-    i = 0;
-    j = 0;
-    char string[8] = {0};
+   i = 0;
+   j = 0;
+   char string[8] = {0};
 
-    while (i < strlen(pastPlays)) {
-        while (j < 8) {
-           string[j] = pastPlays[i];
-           i++;
-           j++;
-        }
-    }
+   while (i < strlen(pastPlays)) {
+      while (j < 8) {
+			string[j] = pastPlays[i];
+         i++;
+         j++;
+      }
+   }
 
    // for hunters
    // calculateHealth(new, player);
@@ -154,7 +154,7 @@ int GvGetScore(GameView gv)
 {
 	// TODO: needs to be fixed
 	if (GvGetRound(gv) == 0) {
-	   return GAME_START_SCORE;
+		return GAME_START_SCORE;
    } else {
       return GAME_START_SCORE - (SCORE_LOSS_DRACULA_TURN * GvGetRound(gv));
    }
