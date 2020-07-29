@@ -378,9 +378,23 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	ConnList curr;
 	
 	if (road) {
+		
+		int addRoad = 1;
+		
+		PlaceId *insert = malloc(addRoad * sizeof(*insert));
+		
 		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
-			if (curr->type == ROAD && player != PLAYER_DRACULA) {
-				connections[*numReturnedLocs] = curr->p;
+			if (curr->type == ROAD) {
+				insert[addRoad] = curr->p;
+				addRoad++;
+			}
+		}
+		
+		for (int i = 1; i < addRoad; i++) {
+			if (player == PLAYER_DRACULA && insert[i] == ST_JOSEPH_AND_ST_MARY) {
+				continue;
+			} else {
+				connections[*numReturnedLocs] = insert[i];
 				(*numReturnedLocs)++;
 			}
 		}
