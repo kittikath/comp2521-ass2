@@ -138,7 +138,7 @@ int main(void)
 				GAME_START_BLOOD_POINTS - LIFE_LOSS_HUNTER_ENCOUNTER);
 		assert(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING) == GENEVA);
 		assert(GvGetPlayerLocation(gv, PLAYER_DRACULA) == GENEVA);
-		//assert(GvGetVampireLocation(gv) == NOWHERE);
+		assert(GvGetVampireLocation(gv) == NOWHERE);
 
 		GvFree(gv);
 		printf("Test passed\n");
@@ -234,8 +234,7 @@ int main(void)
 		                         - 4 * SCORE_LOSS_DRACULA_TURN
 		                         - SCORE_LOSS_HUNTER_HOSPITAL);
 		assert(GvGetHealth(gv, PLAYER_LORD_GODALMING) == 0);
-		// SHOULD PASS THIS, IDK WHY IT ISSNTT
-		//assert(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING) == HOSPITAL_PLACE);
+		assert(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING) == HOSPITAL_PLACE);
 		assert(GvGetPlayerLocation(gv, PLAYER_DRACULA) == STRASBOURG);
 		
 		GvFree(gv);
@@ -278,6 +277,10 @@ int main(void)
 		assert(GvGetVampireLocation(gv) == CASTLE_DRACULA);
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+		// debugging
+		// printf("%d\n", numTraps);
+		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
 		assert(traps[0] == GALATZ && traps[1] == KLAUSENBURG);
@@ -307,6 +310,10 @@ int main(void)
 		assert(GvGetVampireLocation(gv) == BUCHAREST);
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+		// Debugging
+		// printf("%d\n", numTraps);
+		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
 		assert(traps[0] == CONSTANTA && traps[1] == GALATZ);
@@ -428,6 +435,9 @@ int main(void)
 			                                     1, GALATZ, true, false,
 			                                     false, &numLocs);
 
+			// debugging
+			printf("%d\n", numLocs);
+			
 			assert(numLocs == 5);
 			sortPlaces(locs, numLocs);
 			assert(locs[0] == BUCHAREST);
@@ -446,6 +456,9 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, IONIAN_SEA, false, false,
 			                                     true, &numLocs);
+			
+			// debugging
+			// printf("%d\n", numLocs);
 			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
@@ -467,6 +480,9 @@ int main(void)
 			                                     2, PARIS, false, true,
 			                                     false, &numLocs);
 			
+			// debugging
+			// printf("%d\n", numLocs);
+			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
 			assert(locs[0] == BORDEAUX);
@@ -485,6 +501,9 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, ATHENS, false, true,
 			                                     false, &numLocs);
+			
+			// debugging
+			// printf("%d\n", numLocs);
 			
 			assert(numLocs == 1);
 			assert(locs[0] == ATHENS);
