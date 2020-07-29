@@ -48,7 +48,10 @@ DraculaView DvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate DraculaView\n");
 		exit(EXIT_FAILURE);
 	}
-
+	// import from gameview
+	new->pastPlays = pastPlays;
+	new->messages = messages;
+	new->gameView = GvNew(pastPlays, messages);
 
 	return new;
 }
@@ -104,8 +107,16 @@ PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	
+	PlaceId *move = playerLastMoves(dv->gameView, PLAYER_DRACULA, 5, 100);
+	/*
+	int round = DvGetRound(dv);
+	char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+	// has dracula's past 5 moves
+	for (int i = 0; i < 5; i++) {
 
+	}
+	*/
+	printf("move is %d\n", move[0]);
 	// Vampire move
 	// if the round is 0, 13, 26(divisible by 13) etc.. place a vampire
 	// when he visits a city 
@@ -139,13 +150,13 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 {
 	// TODO: Have not tested
-	int round = DvGetRound(dv->gameView);
-	PlaceId curLoc = DvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+	int round = DvGetRound(dv);
+	PlaceId curLoc = DvGetPlayerLocation(dv, PLAYER_DRACULA);
 	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
 
 	int numLocs = -1;
 	PlaceId *locs = GvGetReachable(dv->gameView, PLAYER_DRACULA, round, curLoc, &numLocs);
-
+	printf("hi\n");
 	// if dracula has not made a move this round yet, return null
 	if (curMove == NULL) {
 		*numReturnedLocs = 0;
@@ -157,12 +168,11 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 		if (numLocs == 0) {
 			// teleport to castle dracula
 			*numReturnedLocs = 1;
-			return TELEPORT;
 		}
 		else {
 			*numReturnedLocs = numLocs;
-			return locs;
 		}
+			return locs;
 	}
 }
 
@@ -170,8 +180,8 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
 	// TODO: Have not tested
-	int round = DvGetRound(dv->gameView);
-	PlaceId curLoc = DvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+	int round = DvGetRound(dv);
+	PlaceId curLoc = DvGetPlayerLocation(dv, PLAYER_DRACULA);
 	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
 
 	int numLocs = -1;
@@ -189,12 +199,11 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
 		if (numLocs == 0) {
 			// teleport to castle dracula
 			*numReturnedLocs = 1;
-			return TELEPORT;
 		}
 		else {
 			*numReturnedLocs = numLocs;
-			return locs;
 		}
+		return locs;
 	}
 }
 
@@ -217,3 +226,4 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
+

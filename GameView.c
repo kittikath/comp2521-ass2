@@ -258,7 +258,6 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 {
 	// TODO: DONE!
 	*canFree = true;
-
 	return playerLastMoves(gv, player, numMoves, numReturnedMoves);
 }
 
@@ -381,6 +380,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	      connections[index] = i;
 	      index++;
 	   }
+   printf("break\n");
 	}
 	
 	return connections;
@@ -567,18 +567,22 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
     // TODO: DONE!
     
 	int numMoveHistory = GvGetRound(gv) + 1;
+   printf("num move history is %d\n", numMoveHistory);
 	// if player has not yet made a move
 	if (GvGetPlayer(gv) <= player) {
       numMoveHistory--;
    }
+   printf("num move history is %d\n", numMoveHistory);
     
     int numLastMoves;
+    printf("nummoves is %d\n", numMoves);
     // setting the number of last moves available
     if (numMoveHistory > numMoves) {
         numLastMoves = numMoves;
     } else {
         numLastMoves = numMoveHistory;
     }
+    printf("num last moves is %d\n", numLastMoves);
 	
 	PlaceId *lastMoves = malloc(numLastMoves * sizeof(*lastMoves));
 	
@@ -588,9 +592,10 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
 	    char *move = getPlayerMove(gv->pastPlays, player, i);
 	    char *abbrev = strndup(move + 1, 2);
 	    lastMoves[j] = placeAbbrevToId(abbrev);
+      printf("%s\n", move);
 	}
-	
 	*numReturnedMoves = numLastMoves;
+	printf("broke\n");
 	return lastMoves;
 }
 
