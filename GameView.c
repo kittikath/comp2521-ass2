@@ -237,20 +237,54 @@ PlaceId GvGetVampireLocation(GameView gv)
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 {
 	// TODO: still needs considering
-	int numMoveHistory = GvGetRound(gv);
+	int numMoveHistory = GvGetRound(gv) + 1;
 	
-	PlaceId *trapLocations = malloc(numMoveHistory * sizeof(*trapLocations));
+	int laidTraps = 0;
 	
-	for (int i = 0; i < numMoveHistory; i++) {
+	int destroyedTraps = 0;
+	
+	PlaceId *totalTraps = malloc(numMoveHistory * sizeof(*totalTraps));
+	
+	PlaceId *trapLocations = malloc(laidTraps * sizeof(*trapLocations));
+	
+	PlaceId *removeLocations = malloc(destroyedTraps * sizeof(*removeLocations));
+	
+	// Locations where Dracula laid a trap
+	for (int i = 0; i < numMoveHistory - 1; i++) {
 		char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
 		if (strncmp(move + 3, "T", 1) == 0) {
 			char *abbrev = strndup(move + 1, 2);
-			trapLocations[*numTraps] = placeAbbrevToId(abbrev);
+			trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			(laidTraps)++;
+		}
+	}
+	
+	// Locations where hunters have encounter a trap
+	for (int i = 0; i < numMoveHistory; i++) {
+		for (int j = 0; j < 4; j++) {
+			char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
+			if (strncmp(hunterMove + 3, "T", 1) == 0) {
+				char *abbrev = strndup(hunterMove + 1, 2);
+				removeLocations[destroyedTraps] = placeAbbrevToId(abbrev);
+				(destroyedTraps)++;
+			}
+		}
+	}
+	
+	// Record locations where traps exist
+	for (int i = 0; i < laidTraps; i++) {
+		if (trapLocations[i] != removeLocations[i]) {
+			totalTraps[*numTraps] = trapLocations[i];
 			(*numTraps)++;
 		}
 	}
 	
-	return trapLocations;
+	// Free memory
+	free(trapLocations);
+	
+	free(removeLocations);
+	
+	return totalTraps;
 }
 
 ////////////////////////////////////////////////////////////////////////
