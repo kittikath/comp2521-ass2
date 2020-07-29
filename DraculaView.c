@@ -122,6 +122,7 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 
 	int round = DvGetRound(dv);
 	// bools
+	bool alreadyVisited = false;
 	bool hasHide = false;
 	bool hasDoubleBack1 = false;
 	bool hasDoubleBack2 = false;
@@ -129,20 +130,24 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 	bool hasDoubleBack4 = false;
 	bool hasDoubleBack5 = false;
 	int count = 0;
-	int i = 0;
-	printf("round %d\n", round);
 
 
 	//int numValidMoves = numReturnedMoves;
 	// get current move and location
-	char *currMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+	//char *currMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
 	PlaceId currLocation = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
 
 	// need to find out how many legal moves is possible first //
 
 	// run through how many places are reachable from current location	
 	int numReturnedLocs = 0;
-	PlaceId *reachable = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, round, currLocation, true, false, true, &numReturnedLocs);
+	int numTrailLocs = 0;
+	// [GALATZ, KLAUSENBURG]
+	PlaceId *reachable = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, round, currLocation, 
+						 true, false, true, &numReturnedLocs);
+	PlaceId *locationTrail = playerLastMoves(dv->gameView, PLAYER_DRACULA, 5, &numTrailLocs);
+	printf("//reachable location is %d//\n", reachable[1]);
+	printf("reachable locs is %d\n", numReturnedLocs);
 
 	// run through dracula's past 5 turns to collect data
 	for (int i = round; i > 0; i--) {
@@ -150,6 +155,12 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 		PlaceId location = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
 		char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, i);
 		if (move != NULL) {
+			// if dracula has been to these location in past 5 turns
+			for (int j = 0; j < numReturnedLocs; j++) {
+				if (location == locationTrail[j]) {
+					alreadyVisited = true;
+				}
+			}
 			if (location == HIDE) {
 				hasHide = true;
 			}
@@ -167,6 +178,9 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 			}
 			if (location == DOUBLE_BACK_5) {
 				hasDoubleBack5 = true;
+			}
+			else {
+				// teleport to castle dracula
 			}
 		}
 	}
@@ -193,13 +207,15 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 
 	// calculate total number of valid moves
 	// 6 hide/doubleback moves + num of reachable locations - illegal moves
-	int numValidMoves = 6 + numReturnedLocs - count;
+	int numValidMoves = numReturnedLocs + count;
 
 	PlaceId *validMoves = malloc(numReturnedLocs * sizeof(*validMoves));
 
 	for (int i = 0; i < numValidMoves; i++) {
-		char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, i);
-      	char *abbrev = strndup(move + 1, 2);
+		if (alreadyVisited == false) {
+			validMoves[i] = reachable[i];
+			break;
+		}
 		if (hasHide == false) {
 			validMoves[i] = HIDE;
 			break;
@@ -225,36 +241,9 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 			break;
 		}
 	}
-
-
-	// Vampire move
-	// if the round is 0, 13, 26(divisible by 13) etc.. place a vampire
-	// when he visits a city 
-	// cannot place if there are already 3 encounters in city
-	// cannot be used in sea
-
-	// Trap move
-	// when he visits a city, drop a trap unless he is able to drop a vampire
-	// cannot place if there are already 3 encounters in city
-	// cannot be used in sea
-
-	// Location move
-	// can only move to a adjacent location via road or boat
-	// cannot move to location if dracula has been there in the past 5 rounds
-	// can not move to hospital
-
-	// Hide move
-	// can only stay in the same city he was in
-	// cannot make a hide move if he has made one in the past 5 founds
-	// cannot make a hide move at sea
-
-	// Double back move
-	// can make a move to a location adjacent to his current location that he
-	// has been to in his past 5 rounds
-	// cannot make a double back move if he has done so in the past 5 rounds
-
-	*numReturnedMoves = 0;
-	return NULL;
+	*numReturnedMoves = numValidMoves;
+	printf("num valid moves is %d\n", numValidMoves);
+	return validMoves;
 }
 
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
@@ -264,9 +253,12 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 	PlaceId curLoc = DvGetPlayerLocation(dv, PLAYER_DRACULA);
 	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
 
-	int numLocs = -1;
+	int numLocs = 0;
 	PlaceId *locs = GvGetReachable(dv->gameView, PLAYER_DRACULA, round, curLoc, &numLocs);
 	printf("hi\n");
+
+	PlaceId *moveArray = malloc(numLocs * sizeof(*moveArray));
+
 	// if dracula has not made a move this round yet, return null
 	if (curMove == NULL) {
 		*numReturnedLocs = 0;
@@ -278,11 +270,15 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 		if (numLocs == 0) {
 			// teleport to castle dracula
 			*numReturnedLocs = 1;
+			moveArray[0] = TELEPORT;
 		}
 		else {
+			for (int i = 0; i < numLocs; i++) {
+				moveArray[i] = locs[i];
+			}
 			*numReturnedLocs = numLocs;
 		}
-			return locs;
+		return moveArray;
 	}
 }
 
