@@ -25,22 +25,15 @@
 #define FALSE 0
 
 // TODO: ADD YOUR OWN STRUCTS HERE
-
-typedef struct vampire {
-    bool exist;
-    PlaceId place;
-    Round roundSpawned;
-} Vampire;
-
-typedef struct trap {
-    int count;
-} Trap;
+PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
+                        int *numReturnedMoves);
+char *getPlayerMove(char *pastPlays, Player player, Round round);
 
 struct draculaView {
 	// TODO: ADD FIELDS HERE
 	GameView gameView;
-	Vampire vampire;
-	Trap trap;
+	char *pastPlays;
+	Message *messages;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -54,26 +47,6 @@ DraculaView DvNew(char *pastPlays, Message messages[])
 	if (new == NULL) {
 		fprintf(stderr, "Couldn't allocate DraculaView\n");
 		exit(EXIT_FAILURE);
-	}
-
-	int i;
-	// initialise gameview in drac view
-	new->gameView = GvNew(pastPlays, messages);
-
-	// if game is in initial state
-	if (strlen(pastPlays) == 0) {
-		new->vampire.exist = FALSE;
-		new->vampire.place = NOWHERE;
-		new->vampire.roundSpawned = 0;
-
-		new->trap.count = 0;
-
-		return new;
-	}
-	// dracula turn NOT FINISHED
-	else {
-		int turn = 1;
-		if (pastPlays[turn] == )
 	}
 
 
@@ -122,9 +95,7 @@ PlaceId DvGetVampireLocation(DraculaView dv)
 PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 {
 	// TODO: DONE
-
-	*numTraps = 0;
-	return;
+	return GvGetTrapLocations(dv->gameView, numTraps);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -133,23 +104,98 @@ PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	
+
+	// Vampire move
+	// if the round is 0, 13, 26(divisible by 13) etc.. place a vampire
+	// when he visits a city 
+	// cannot place if there are already 3 encounters in city
+	// cannot be used in sea
+
+	// Trap move
+	// when he visits a city, drop a trap unless he is able to drop a vampire
+	// cannot place if there are already 3 encounters in city
+	// cannot be used in sea
+
+	// Location move
+	// can only move to a adjacent location via road or boat
+	// cannot move to location if dracula has been there in the past 5 rounds
+	// can not move to hospital
+
+	// Hide move
+	// can only stay in the same city he was in
+	// cannot make a hide move if he has made one in the past 5 founds
+	// cannot make a hide move at sea
+
+	// Double back move
+	// can make a move to a location adjacent to his current location that he
+	// has been to in his past 5 rounds
+	// cannot make a double back move if he has done so in the past 5 rounds
+
 	*numReturnedMoves = 0;
 	return NULL;
 }
 
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	// TODO: Have not tested
+	int round = DvGetRound(dv->gameView);
+	PlaceId curLoc = DvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+
+	int numLocs = -1;
+	PlaceId *locs = GvGetReachable(dv->gameView, PLAYER_DRACULA, round, curLoc, &numLocs);
+
+	// if dracula has not made a move this round yet, return null
+	if (curMove == NULL) {
+		*numReturnedLocs = 0;
+		return NULL;
+	}
+	// dracula has made a move
+	else {
+		// if there are no locations to go to
+		if (numLocs == 0) {
+			// teleport to castle dracula
+			*numReturnedLocs = 1;
+			return TELEPORT;
+		}
+		else {
+			*numReturnedLocs = numLocs;
+			return locs;
+		}
+	}
 }
 
 PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	// TODO: Have not tested
+	int round = DvGetRound(dv->gameView);
+	PlaceId curLoc = DvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+
+	int numLocs = -1;
+	// dracula cannot use rail
+	PlaceId *locs = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, round, curLoc, true, false, true, &numLocs);
+
+	// if dracula has not made a move this round yet, return null
+	if (curMove == NULL) {
+		*numReturnedLocs = 0;
+		return NULL;
+	}
+	// dracula has made a move
+	else {
+		// if there are no locations to go to
+		if (numLocs == 0) {
+			// teleport to castle dracula
+			*numReturnedLocs = 1;
+			return TELEPORT;
+		}
+		else {
+			*numReturnedLocs = numLocs;
+			return locs;
+		}
+	}
 }
 
 PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
@@ -171,5 +217,3 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
-
-// TODO
