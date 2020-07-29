@@ -107,16 +107,126 @@ PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	PlaceId *move = playerLastMoves(dv->gameView, PLAYER_DRACULA, 5, 100);
+	*numReturnedMoves = 0;
 	/*
-	int round = DvGetRound(dv);
-	char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
-	// has dracula's past 5 moves
-	for (int i = 0; i < 5; i++) {
+	PlaceId *move = playerLastMoves(dv->gameView, PLAYER_DRACULA, 5, numReturnedMoves);
+	int tmp = *numReturnedMoves;
 
+	for (int i = 0; i < tmp; i++) {
+		const char *movename = placeIdToName(move[i]);
+		printf("placename is %s\n", movename);
+		
+		printf("%d\n", move[0]);
 	}
 	*/
-	printf("move is %d\n", move[0]);
+
+	int round = DvGetRound(dv);
+	// bools
+	bool hasHide = false;
+	bool hasDoubleBack1 = false;
+	bool hasDoubleBack2 = false;
+	bool hasDoubleBack3 = false;
+	bool hasDoubleBack4 = false;
+	bool hasDoubleBack5 = false;
+	int count = 0;
+	int i = 0;
+	printf("round %d\n", round);
+
+
+	//int numValidMoves = numReturnedMoves;
+	// get current move and location
+	char *currMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+	PlaceId currLocation = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+
+	// need to find out how many legal moves is possible first //
+
+	// run through how many places are reachable from current location	
+	int numReturnedLocs = 0;
+	PlaceId *reachable = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, round, currLocation, true, false, true, &numReturnedLocs);
+
+	// run through dracula's past 5 turns to collect data
+	for (int i = round; i > 0; i--) {
+		printf("hi\n");
+		PlaceId location = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+		char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, i);
+		if (move != NULL) {
+			if (location == HIDE) {
+				hasHide = true;
+			}
+			if (location == DOUBLE_BACK_1) {
+				hasDoubleBack1 = true;
+			}
+			if (location == DOUBLE_BACK_2) {
+				hasDoubleBack2 = true;
+			}
+			if (location == DOUBLE_BACK_3) {
+				hasDoubleBack3 = true;
+			}
+			if (location == DOUBLE_BACK_4) {
+				hasDoubleBack4 = true;
+			}
+			if (location == DOUBLE_BACK_5) {
+				hasDoubleBack5 = true;
+			}
+		}
+	}
+
+	// if 'hide' or any 'double back' move was found, increment
+	if (hasHide == true) {
+		count++;
+	}
+	if (hasDoubleBack1 == true) {
+		count++;
+	}
+	if (hasDoubleBack2 == true) {
+		count++;
+	}
+	if (hasDoubleBack3 == true) {
+		count++;
+	}
+	if (hasDoubleBack4 == true) {
+		count++;
+	}
+	if (hasDoubleBack5 == true) {
+		count++;
+	}
+
+	// calculate total number of valid moves
+	// 6 hide/doubleback moves + num of reachable locations - illegal moves
+	int numValidMoves = 6 + numReturnedLocs - count;
+
+	PlaceId *validMoves = malloc(numReturnedLocs * sizeof(*validMoves));
+
+	for (int i = 0; i < numValidMoves; i++) {
+		char *move = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, i);
+      	char *abbrev = strndup(move + 1, 2);
+		if (hasHide == false) {
+			validMoves[i] = HIDE;
+			break;
+		}
+		if (hasDoubleBack1 == false) {
+			validMoves[i] = DOUBLE_BACK_1;
+			break;
+		}
+		if (hasDoubleBack2 == false) {
+			validMoves[i] = DOUBLE_BACK_2;
+			break;
+		}
+		if (hasDoubleBack3 == false) {
+			validMoves[i] = DOUBLE_BACK_3;
+			break;
+		}
+		if (hasDoubleBack4 == false) {
+			validMoves[i] = DOUBLE_BACK_4;
+			break;
+		}
+		if (hasDoubleBack5 == false) {
+			validMoves[i] = DOUBLE_BACK_5;
+			break;
+		}
+	}
+
+
 	// Vampire move
 	// if the round is 0, 13, 26(divisible by 13) etc.. place a vampire
 	// when he visits a city 
