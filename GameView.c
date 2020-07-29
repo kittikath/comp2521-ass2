@@ -369,7 +369,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 					connections[*numReturnedLocs] = curr->p;
 					(*numReturnedLocs)++;
 				}
-				if (numStations == 0) {
+				if (numStations == 0 || player == PLAYER_DRACULA) {
 					return connections;
 				}
 			}
