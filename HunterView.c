@@ -19,18 +19,35 @@
 #include "HunterView.h"
 #include "Map.h"
 #include "Places.h"
-#include "Queue.h"
+
 // add your own #includes here
 // TODO: ADD YOUR OWN STRUCTS HERE
 
 struct hunterView {
 	GameView gameView;
 	char *pastPlays;
+	int pred[NUM_REAL_PLACES];
 	Message *messages;
+	
 };
 
-// helper functions
+typedef struct QueueRep {
+	ConnList head;  // ptr to first node
+	ConnList tail;  // ptr to last node
+} QueueRep, *Queue;
 
+
+
+// queue functions
+Queue newQueue(); // create new empty queue
+void dropQueue(Queue); // free memory used by queue
+void showQueue(Queue); // display as 3 > 5 > 4 > ...
+void QueueJoin(Queue, ConnList); // add item on queue
+ConnList QueueLeave(Queue); // remove item from queue
+int QueueIsEmpty(Queue); // check for no items
+
+
+// helper functions 
 char *getLastMove(GameView gv, Player player);
 char* getPlayerMove(char *pastPlays, Player player, Round round);
 
@@ -59,10 +76,13 @@ HunterView HvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate HunterView!\n");
 		exit(EXIT_FAILURE);
 	}
-
 	new->pastPlays = pastPlays;
 	new->messages = messages;
+	for(int i = 0; i < NUM_REAL_PLACES; i++){
+		new->pred[i] = -1;
+	}
 	new->gameView = GvNew(pastPlays, messages);
+
 	return new;
 }
 
@@ -144,39 +164,63 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*pathLength = 0;
-	PlaceId curr;
 	Map m = MapNew();
 	PlaceId src = HvGetPlayerLocation(hv, hunter);
-	int pred[m->nV];
-	//set all to -1 (not found)
-	for(int i = 0; i < m->nV; i++){
-		pred[i] = -1;
-	}
+	TransportType Tsrc = placeIdToType(src);
+	ConnList srcNode = malloc(sizeof(ConnList)); 
+	srcNode->p = src;
+	printf("first location %s last location is %s %s\n", placeIdToName(srcNode->p), placeIdToName(dest), transportTypeToString(Tsrc));
+	srcNode->type = Tsrc;
+	srcNode->next = NULL;
 	Queue Q = newQueue();
-	QueueJoin(Q, src);
-	while(!QueueIsEmpty(Q)){
+	ConnList curr;
+	int railMoves = 0;
+	int moveFlag = 0;
+	int isFound = 0;
+	QueueJoin(Q, srcNode);
+	while(!QueueIsEmpty(Q) && !isFound){
 		curr = QueueLeave(Q);
+		//QueueLeave function not printing correct
+		printf("first location %s last location is %s \n", placeIdToName(curr->p), transportTypeToString(curr->type));
 		//check for connections of node
-		for(int j = 0; j < m->nV; j++){
+		for(curr =  MapGetConnections(m, curr->p); curr != NULL; curr = curr->next){
 			//we found a connection :O
-			if(m->edges[curr][j] != 0){
-			//add 
-			printf("value %d\n", m->edges[curr][j] != 0);
-				if(pred[j] == -1){
-					pred[j] = curr;
-					QueueJoin(Q, j);
-					showQueue(Q);
-					printf("----------\n");
+			printf("curr %s transport %s\n", placeIdToName(curr->p), transportTypeToString(curr->type));
+			if(hv->pred[curr->p] == -1){
+				if(curr->type == RAIL && railMoves != 0){
+					railMoves--;
 				}
+				else if(curr->type == RAIL && !moveFlag){
+					moveFlag = 1;
+					railMoves = (hunter+HvGetRound(hv))%4;
+				}
+				hv->pred[curr->p] = curr->p;
+				QueueJoin(Q, curr);
+				
 			}
+			if(curr->p == dest){ 
+				printf("--------------------------\n");
+				isFound = 1; 
+				break; 
+			}
+			//check if theres another route other than rail,
+			//if there is switch the queue node for that one.
+			showQueue(Q);
+			// m->connection[curr->p] != 0){
 		}
 	}
 	dropQueue(Q);
 	//no path found
-	if(pred[dest] == -1){
+	if(hv->pred[dest] == -1){
 		return NULL;
 	}
-	
+	else{
+		printf("ok\n");
+		for(int v = dest; v != src; v = hv->pred[v]){
+			printf("%d<-", v);
+		}
+		printf("%d\n", src);
+	}
 
 
 	return NULL;
@@ -221,3 +265,86 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 // Your own interface functions
 
 // TODO
+
+// create new empty Queue
+Queue newQueue()
+{
+	Queue q;
+	q = malloc(sizeof(QueueRep));
+	assert(q != NULL);
+	q->head = NULL;
+	q->tail = NULL;
+	return q;
+}
+
+// free memory used by Queue
+void dropQueue(Queue Q)
+{
+	ConnList curr, next;
+	assert(Q != NULL);
+	// free list nodes
+	curr = Q->head;
+	while (curr != NULL) {
+		next = curr->next;
+		free(curr);
+		curr = next;
+	}
+	// free queue rep
+	free(Q);
+}
+
+// display as 3 > 5 > 4 > ...
+void showQueue(Queue Q)
+{
+	ConnList curr;
+	assert(Q != NULL);
+	// free list nodes
+	curr = Q->head;
+	while (curr != NULL) {
+		printf("%s ", placeIdToName(curr->p));
+		if (curr->next != NULL)
+			printf(">");
+		curr = curr->next;
+	}
+	printf("\n");
+}
+
+// add item at end of Queue 
+void QueueJoin(Queue Q, ConnList node)
+{
+	assert(Q != NULL);
+	assert(placeIsReal(node->p));
+	assert(transportTypeIsValid(node->type));
+	ConnList new = malloc(sizeof(ConnList));
+	assert(new != NULL);
+	new->p = node->p;
+	printf("%s!!!\n", placeIdToName(new->p));
+	new->type = node->type;
+	new->next = NULL;
+	if (Q->head == NULL)
+		Q->head = new;
+	if (Q->tail != NULL)
+		Q->tail->next = new;
+	Q->tail = new;
+}
+
+// remove item from front of Queue
+ConnList QueueLeave(Queue Q)
+{
+	assert(Q != NULL);
+	assert(Q->head != NULL);
+	ConnList it = Q->head;
+	printf("%s????\n", placeIdToName(Q->head->p));
+	ConnList old = Q->head;
+	Q->head = old->next;
+	if (Q->head == NULL)
+		Q->tail = NULL;
+	free(old);
+	return it;
+}
+
+// check for no items
+int QueueIsEmpty(Queue Q)
+{
+	return (Q->head == NULL);
+}
