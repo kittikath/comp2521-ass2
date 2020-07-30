@@ -279,7 +279,7 @@ int main(void)
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
 		
 		// debugging
-		// printf("%d\n", numTraps);
+		printf("number of traps: %d\n", numTraps);
 		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
@@ -312,7 +312,7 @@ int main(void)
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
 		
 		// Debugging
-		// printf("%d\n", numTraps);
+		printf("number of traps: %d\n", numTraps);
 		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
@@ -458,7 +458,7 @@ int main(void)
 			                                     true, &numLocs);
 			
 			// debugging
-			// printf("%d\n", numLocs);
+			printf("%d\n", numLocs);
 			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
@@ -481,7 +481,7 @@ int main(void)
 			                                     false, &numLocs);
 			
 			// debugging
-			// printf("%d\n", numLocs);
+			printf("%d\n", numLocs);
 			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
@@ -503,7 +503,7 @@ int main(void)
 			                                     false, &numLocs);
 			
 			// debugging
-			// printf("%d\n", numLocs);
+			printf("%d\n", numLocs);
 			
 			assert(numLocs == 1);
 			assert(locs[0] == ATHENS);
