@@ -163,7 +163,7 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     // building a valid moves array    
     int numValidMoves = numReachables;
     
-    // removing double back and hiding locations
+    // removing double back and hiding moves
     numValidMoves -= numTrailMoves(numMoves, trailMoves);
     
     if (!doubleBack) {
