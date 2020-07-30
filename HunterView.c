@@ -204,12 +204,13 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 					printf("%d %d, %s...\n", hv->pred[curr->p], curr->p, placeIdToName(hv->pred[curr->p]));
 					movesByRail = travelByRail(hv, m, curr->p, src, dest, railMoves);
 					railMoves = 0;
-					for(int steps = 1; steps <= maxSteps; steps++){
-						PlaceId placeB4 = hv->railDest[c][steps-1];
-						for(c = 0; c <= movesByRail; c++){
+					for(c = 0; c <= movesByRail; c++){
+						PlaceId placeB4 = hv->railDest[c][0];
+						for(int steps = 1; steps <= maxSteps; steps++){
 							if(hv->pred[hv->railDest[c][steps]] < 0){
 								hv->pred[hv->railDest[c][steps]] = placeB4;
 								srcNode = createNode(hv->railDest[c][steps], RAIL);
+								printf("added to queue, %s %s\n", placeIdToName(hv->pred[hv->railDest[c][steps]]), placeIdToName(placeB4));
 								QueueJoin(Q, srcNode);
 							}
 							if(hv->railDest[c][steps] == dest){
@@ -226,7 +227,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 				}
 			}
 			if(curr->p == dest){ 
-				printf("--------------------------\n");
+			printf("~~~~~~~~~\n");
 				isFound = 1; 
 				break; 
 			}
@@ -346,6 +347,7 @@ bool checkRail(HunterView hv, Player player, bool rail)
 int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId dest, Player player){
 	PlaceId currLoc;
 	int predCopy[NUM_REAL_PLACES];
+	int movesPerRound[NUM_REAL_PLACES] = {0};
 	int round = HvGetRound(hv);
 	int pathcur = 0;
 	int totalpath = 0;
@@ -368,6 +370,7 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 	while(pathcur <= totalpath){
 		currLoc = hv->railPath[pathcur].tail->p;
 		moves = (round+player)%4;
+		movesPerRound[round] = moves;
 		printf("start %s moves this round %d\n", placeIdToName(currLoc), moves);
 		counter = moves;
 		while(counter != 0){
