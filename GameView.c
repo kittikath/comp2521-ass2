@@ -237,8 +237,54 @@ PlaceId GvGetVampireLocation(GameView gv)
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 {
 	// TODO: still needs considering
-	*numTraps = 0;
-	return NULL;
+	int numMoveHistory = GvGetRound(gv) + 1;
+	
+	int laidTraps = 0;
+	
+	int destroyedTraps = 0;
+	
+	PlaceId *totalTraps = malloc(numMoveHistory * sizeof(*totalTraps));
+	
+	PlaceId *trapLocations = malloc(laidTraps * sizeof(*trapLocations));
+	
+	PlaceId *removeLocations = malloc(destroyedTraps * sizeof(*removeLocations));
+	
+	// Locations where Dracula laid a trap
+	for (int i = 0; i < numMoveHistory - 1; i++) {
+		char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
+		if (strncmp(move + 3, "T", 1) == 0) {
+			char *abbrev = strndup(move + 1, 2);
+			trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			(laidTraps)++;
+		}
+	}
+	
+	// Locations where hunters have encounter a trap
+	for (int i = 0; i < numMoveHistory; i++) {
+		for (int j = 0; j < 4; j++) {
+			char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
+			if (strncmp(hunterMove + 3, "T", 1) == 0) {
+				char *abbrev = strndup(hunterMove + 1, 2);
+				removeLocations[destroyedTraps] = placeAbbrevToId(abbrev);
+				(destroyedTraps)++;
+			}
+		}
+	}
+	
+	// Record locations where traps exist
+	for (int i = 0; i < laidTraps; i++) {
+		if (trapLocations[i] != removeLocations[i]) {
+			totalTraps[*numTraps] = trapLocations[i];
+			(*numTraps)++;
+		}
+	}
+	
+	// Free memory
+	free(trapLocations);
+	
+	free(removeLocations);
+	
+	return totalTraps;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -321,66 +367,61 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 {
 	// TODO: done?
 	
+	*numReturnedLocs = 1;
+	
+	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(connections));
+	
 	Map europe = MapNew();
 	
-	int i;
+	connections[0] = from;
 	
-	int reachable[NUM_REAL_PLACES];
+	ConnList curr;
 	
-	for (i = 0; i < NUM_REAL_PLACES; i++) {
-	   reachable[i] = FALSE;
-	}
-	
-	reachable[from] = TRUE;
-	
-	// Determining if adjacent and transport type ROAD
 	if (road) {
-	   for (i = 0; i < NUM_REAL_PLACES; i++) {
-	      for (ConnList curr = MapGetConnections(europe, from); curr != NULL; 
-	           curr = curr->next) {
-	         if (curr->type == ROAD && curr->p == reachable[i]) {
-	            reachable[i] = TRUE;
-	         }
-	      }
-	   }
+		
+		int addRoad = 1;
+		
+		PlaceId *insert = malloc(addRoad * sizeof(*insert));
+		
+		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
+			if (curr->type == ROAD) {
+				insert[addRoad] = curr->p;
+				addRoad++;
+			}
+		}
+		
+		for (int i = 1; i < addRoad; i++) {
+			if (player == PLAYER_DRACULA && insert[i] == ST_JOSEPH_AND_ST_MARY) {
+				continue;
+			} else {
+				connections[*numReturnedLocs] = insert[i];
+				(*numReturnedLocs)++;
+			}
+		}
 	}
 	
-	// Determining if adjacent and transport type BOAT
 	if (boat) {
-	   for (i = 0; i < NUM_REAL_PLACES; i++) {
-	      for (ConnList curr = MapGetConnections(europe, from); curr != NULL; 
-	           curr = curr->next) {
-	         if (curr->type == BOAT && curr->p == reachable[i]) {
-	            reachable[i] = TRUE;
-	         }
-	      }
-	   }
+		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
+			if (curr->type == BOAT) {
+				connections[*numReturnedLocs] = curr->p;
+				(*numReturnedLocs)++;
+			}
+		}
 	}
 	
-	// Dracula case
-	if (player == PLAYER_DRACULA) {
-	   reachable[ST_JOSEPH_AND_ST_MARY] = FALSE;
-	}
-	
-	*numReturnedLocs = 0;
-	
-	// Count number of locations reachable
-	for (i = 0; i < NUM_REAL_PLACES; i++) {
-	   if (reachable[i] == TRUE) {
-	      (*numReturnedLocs)++;
-	   }
-	}
-	
-	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(*connections));
-	
-	int index;
-	
-	// Returning name of place
-	for (i = 0; i < NUM_REAL_PLACES; i++) {
-	   if (reachable[i] == TRUE) {
-	      connections[index] = i;
-	      index++;
-	   }
+	if (rail) {
+		int numStations = (player + round) % 4;
+		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
+			if (curr->type == RAIL) {
+				if (numStations) {
+					connections[*numReturnedLocs] = curr->p;
+					(*numReturnedLocs)++;
+				}
+				if (numStations == 0 || player == PLAYER_DRACULA) {
+					return connections;
+				}
+			}
+		}
 	}
 	
 	return connections;
