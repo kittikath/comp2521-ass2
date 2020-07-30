@@ -37,13 +37,12 @@ typedef struct QueueRep {
 } QueueRep, *Queue;
 
 
-
 // queue functions
 Queue newQueue(); // create new empty queue
 void dropQueue(Queue); // free memory used by queue
 void showQueue(Queue); // display as 3 > 5 > 4 > ...
 void QueueJoin(Queue, ConnList); // add item on queue
-ConnList QueueLeave(Queue); // remove item from queue
+PlaceId QueueLeave(Queue); // remove item from queue
 int QueueIsEmpty(Queue); // check for no items
 
 
@@ -64,6 +63,8 @@ PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves);
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                          int *numReturnedMoves);
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves);
+
+bool checkRail(HunterView hv, Player player, bool rail);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
@@ -174,16 +175,17 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	srcNode->next = NULL;
 	Queue Q = newQueue();
 	ConnList curr;
+	PlaceId currPlace;
 	int railMoves = 0;
 	int moveFlag = 0;
 	int isFound = 0;
 	QueueJoin(Q, srcNode);
 	while(!QueueIsEmpty(Q) && !isFound){
-		curr = QueueLeave(Q);
+		currPlace = QueueLeave(Q);
 		//QueueLeave function not printing correct
-		printf("first location %s last location is %s \n", placeIdToName(curr->p), transportTypeToString(curr->type));
+		printf("first location %s\n", placeIdToName(currPlace));
 		//check for connections of node
-		for(curr =  MapGetConnections(m, curr->p); curr != NULL; curr = curr->next){
+		for(curr =  MapGetConnections(m, currPlace); curr != NULL; curr = curr->next){
 			//we found a connection :O
 			printf("curr %s transport %s\n", placeIdToName(curr->p), transportTypeToString(curr->type));
 			if(hv->pred[curr->p] == -1){
@@ -194,9 +196,8 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 					moveFlag = 1;
 					railMoves = (hunter+HvGetRound(hv))%4;
 				}
-				hv->pred[curr->p] = curr->p;
+				hv->pred[curr->p] = currPlace;
 				QueueJoin(Q, curr);
-				
 			}
 			if(curr->p == dest){ 
 				printf("--------------------------\n");
@@ -217,11 +218,12 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	else{
 		printf("ok\n");
 		for(int v = dest; v != src; v = hv->pred[v]){
-			printf("%d<-", v);
+			printf("%d %s<-", v, placeIdToName(v));
+			pathLength[0]++;
 		}
 		printf("%d\n", src);
 	}
-
+	printf("pathlength %d\n",pathLength[0]);
 
 	return NULL;
 }
@@ -233,6 +235,12 @@ PlaceId *HvWhereCanIGo(HunterView hv, int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
+	int round = HvGetRound(hv);
+	Player player = GvGetPlayer(hv->gameView);
+	int from = GvGetPlayerLocation(hv->gameView, player);
+	*numReturnedLocs = 0;
+	return GvGetReachableByType(hv->gameView, player, round, from, true, true, true, numReturnedLocs);
+
 	return NULL;
 }
 
@@ -241,15 +249,22 @@ PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
-	return NULL;
+	int round = HvGetRound(hv);
+	Player player = GvGetPlayer(hv->gameView);
+	int from = GvGetPlayerLocation(hv->gameView, player);
+	bool railCheck = checkRail(hv, player, rail);
+	*numReturnedLocs = 0;
+	return GvGetReachableByType(hv->gameView, player, round, from, road, railCheck, boat, numReturnedLocs);
 }
 
 PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
                           int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	int round = HvGetRound(hv);
+	int from = GvGetPlayerLocation(hv->gameView, player);
 	*numReturnedLocs = 0;
-	return NULL;
+	return GvGetReachableByType(hv->gameView, player, round, from, true, true, true, numReturnedLocs);
 }
 
 PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
@@ -257,8 +272,13 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
                                 int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	int round = HvGetRound(hv);
+	int from = GvGetPlayerLocation(hv->gameView, player);
+	bool railCheck = checkRail(hv, player, rail);
 	*numReturnedLocs = 0;
-	return NULL;
+	PlaceId *hello = GvGetReachableByType(hv->gameView, player, round, from, road, railCheck, boat, numReturnedLocs);
+	return hello;
+	//return GvGetReachableByType(hv->gameView, player, round, from, road, rail, boat, numReturnedLocs);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -318,7 +338,6 @@ void QueueJoin(Queue Q, ConnList node)
 	ConnList new = malloc(sizeof(ConnList));
 	assert(new != NULL);
 	new->p = node->p;
-	printf("%s!!!\n", placeIdToName(new->p));
 	new->type = node->type;
 	new->next = NULL;
 	if (Q->head == NULL)
@@ -329,12 +348,11 @@ void QueueJoin(Queue Q, ConnList node)
 }
 
 // remove item from front of Queue
-ConnList QueueLeave(Queue Q)
+PlaceId QueueLeave(Queue Q)
 {
 	assert(Q != NULL);
 	assert(Q->head != NULL);
-	ConnList it = Q->head;
-	printf("%s????\n", placeIdToName(Q->head->p));
+	PlaceId it = Q->head->p;
 	ConnList old = Q->head;
 	Q->head = old->next;
 	if (Q->head == NULL)
@@ -347,4 +365,16 @@ ConnList QueueLeave(Queue Q)
 int QueueIsEmpty(Queue Q)
 {
 	return (Q->head == NULL);
+}
+
+bool checkRail(HunterView hv, Player player, bool rail)
+{
+	int round = HvGetRound(hv);
+	if(rail && (player+round)%4 == 0){
+		printf("changed to false\n");
+		rail = false;
+		printf("%d bool\n", rail);
+
+	}
+	return rail;
 }
