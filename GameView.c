@@ -670,7 +670,6 @@ int hunterDeathCount(GameView gv)
 
 //------------------------ health helper functions -----------------------------
 
-
 // updates the hunter's health according to the encounters in the turn
 int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
 {
