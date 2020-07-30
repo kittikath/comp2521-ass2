@@ -49,6 +49,7 @@ ConnList QueueLast(Queue Q);
 ConnList createNode(PlaceId place, TransportType transport);
 int countNodes(Queue Q);
 bool QueueContains(Queue Q, ConnList node);
+// int findSteps(int length);
 
 //shortest path
 void newPath(HunterView hv, int totalPath, int pathcur, PlaceId place, TransportType transport);
@@ -196,6 +197,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	QueueJoin(Q, srcNode);
 	while(!QueueIsEmpty(Q) && !isFound){
 		currPlace = QueueLeave(Q);
+		// printf("pushed is %s!!\n", placeIdToName(currPlace));
 		//check for connections of node
 		for(curr =  MapGetConnections(m, currPlace); curr != NULL; curr = curr->next){
 			//we found a connection :O
@@ -221,7 +223,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 							// 	isFound = 1;
 							// 	break;
 							// }
-							showQueue(Q);
+							// showQueue(Q);
 						}
 					}
 				}
@@ -352,48 +354,34 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 	PlaceId currLoc;
 	int round = HvGetRound(hv);
 	int moves = (round+player)%4;
-	int length = 1;
+	int length = 0;
 	//calculate moves per round
 	int predCopy[NUM_REAL_PLACES];
 	int movesPerRound[NUM_REAL_PLACES] = {0};
 	movesPerRound[length] = moves;
 	length++;
-	switch(moves){
-		case 1:
-			movesPerRound[length] = 2;
-			break;
-		case 2:
-			movesPerRound[length] = 1;
-			break;
-		case 3:
-			movesPerRound[length] = 2;
-			break;
-		case 0:
-			movesPerRound[length] = 1;
-			break;
-
-	}
-	length++;
 	for(int i = length; i < NUM_REAL_PLACES ; i++){
-		switch(movesPerRound[i-1]){
+		switch((moves+length)%7){
 			case 1:
-				switch(movesPerRound[i-2]){
-					case 2:
-						movesPerRound[i] = 1;
-						break;
-					case 0:
-						movesPerRound[i] = 1;
-						break;
-				}
+				movesPerRound[i] = 1;
 				break;
 			case 2:
-				movesPerRound[i] = 1;
-				break;
-			case 3:
 				movesPerRound[i] = 2;
 				break;
-			case 0:
+			case 3:
 				movesPerRound[i] = 1;
+				break;
+			case 4:
+				movesPerRound[i] = 3;
+				break;
+			case 5:
+				movesPerRound[i] = 2;
+				break;
+			case 6:
+				movesPerRound[i] = 1;
+				break;
+			case 0:
+				movesPerRound[i] = 0;
 				break;
 		}
 	}
@@ -418,8 +406,6 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 	ConnList curr = hv->railPath[pathcur].head;
 	// movesPerRound[round] = moves;
 	while(pathcur <= totalpath){
-		length = countNodes(&(hv->railPath[pathcur]));
-		printf("length is %d %d round\n", length, moves);
 		currLoc = hv->railPath[pathcur].tail->p;
 		moves = (round+player)%4;
 		// movesPerRound[round] = moves;
@@ -428,7 +414,7 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 		while(counter != 0){
 			//find rail connections
 			railConnections = 0;
-			printf("---- %d round %d move ----\n", round, counter);
+			printf("---- %d round %d move ----\n", moves, counter);
 			for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
 				printf("pred %d %d  %s\n", curr->p, predCopy[curr->p], placeIdToName(curr->p));
 				if(curr->type == RAIL && predCopy[curr->p] == -1){
@@ -613,3 +599,33 @@ bool QueueContains(Queue Q, ConnList node){
 	}
 	return false;
 }
+
+// int findSteps(int position){
+// 	int round = hvGetRound(hv);
+// 	int player = hvGetPlayer(hv);
+// 	int next = 0;
+// 	switch((position-round+1)%7){
+// 			case 1:
+// 				next = 1;
+// 				break;
+// 			case 2:
+// 				next = 2;
+// 				break;
+// 			case 3:
+// 				next = 1;
+// 				break;
+// 			case 4:
+// 				next = 3;
+// 				break;
+// 			case 5:
+// 				next = 2;
+// 				break;
+// 			case 6:
+// 				next = 1;
+// 				break;
+// 			case 0:
+// 				next = 0;
+// 				break;
+// 	}
+// 	return next;
+// }
