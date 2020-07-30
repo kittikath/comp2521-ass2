@@ -27,6 +27,7 @@ struct hunterView {
 	GameView gameView;
 	char *pastPlays;
 	int pred[NUM_REAL_PLACES];
+	Queue railPath;
 	Message *messages;
 	
 };
@@ -44,6 +45,7 @@ void showQueue(Queue); // display as 3 > 5 > 4 > ...
 void QueueJoin(Queue, ConnList); // add item on queue
 PlaceId QueueLeave(Queue); // remove item from queue
 int QueueIsEmpty(Queue); // check for no items
+ConnList createNode(PlaceId place, TransportType transport);
 
 
 // helper functions 
@@ -82,6 +84,11 @@ HunterView HvNew(char *pastPlays, Message messages[])
 	for(int i = 0; i < NUM_REAL_PLACES; i++){
 		new->pred[i] = -1;
 	}
+
+	for(int j = 0; j < NUM_REAL_PLACES; j++){
+		new->railPath[j].head = NULL;
+	}
+
 	new->gameView = GvNew(pastPlays, messages);
 
 	return new;
@@ -176,7 +183,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	Queue Q = newQueue();
 	ConnList curr;
 	PlaceId currPlace;
-	int railMoves = 0;
+	int railMoves = (hunter+HvGetRound(hv))%4;
 	int moveFlag = 0;
 	int isFound = 0;
 	QueueJoin(Q, srcNode);
@@ -190,14 +197,12 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 			printf("curr %s transport %s\n", placeIdToName(curr->p), transportTypeToString(curr->type));
 			if(hv->pred[curr->p] == -1){
 				if(curr->type == RAIL && railMoves != 0){
-					railMoves--;
+					curr->p = travelRail();
 				}
-				else if(curr->type == RAIL && !moveFlag){
-					moveFlag = 1;
-					railMoves = (hunter+HvGetRound(hv))%4;
+				else{
+					hv->pred[curr->p] = currPlace;
+					QueueJoin(Q, curr);
 				}
-				hv->pred[curr->p] = currPlace;
-				QueueJoin(Q, curr);
 			}
 			if(curr->p == dest){ 
 				printf("--------------------------\n");
@@ -224,8 +229,29 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 		printf("%d\n", src);
 	}
 	printf("pathlength %d\n",pathLength[0]);
+	//from my lab 7 submission
+	int k = 0;
+	int backtrack = dest;
+	int backpath[NUM_REAL_PLACES];
+	backpath[0] = dest;
+	k++;
+	while(backtrack != src){
+		backpath[k] = hv->pred[backtrack];
+		backtrack = hv->pred[backtrack];
+		k++;
+	}
+	backpath[k] = src;
 
-	return NULL;
+	int hops = k;
+	int counter = hops-1;
+	PlaceId *path =  malloc(pathLength[0]*sizeof(*path));
+	for(int x = 0; x < hops-1; x++){
+		path[x] = backpath[counter-1];
+		printf("%s ->", placeIdToName(path[x]));
+		counter--;
+	}
+	printf("\n");
+	return path;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -377,4 +403,60 @@ bool checkRail(HunterView hv, Player player, bool rail)
 
 	}
 	return rail;
+}
+
+PlaceId *travelByRail(HunterView hv, Map m, PlaceId startLoc, int railMoves){
+	PlaceId currLoc;
+	int pathcur = 0;
+	int totalpath = 0;
+	int railConnections = 0;
+	int moves = railMoves;
+	Queue adjList[NUM_REAL_PLACES];
+	ConnList node = createNode(startLoc, RAIL);
+	QueueJoin(adjList[pathcur], node);
+	ConnList curr = adjList[pathcur].head;
+	while(pathcur <= totalpath){
+		currLoc = adjList[pathcur]->tail->p;
+		moves = railMoves;
+		while(moves != 0){
+			//find rail connections
+			railConnections = 0;
+			for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
+				if(curr->type == RAIL){
+					//save onto current list
+					if(railConnections == 0){
+						//add edge
+						QueueJoin(adjList[pathcur], curr);
+					}
+					else{ //create copy of current list
+						totalpath++;
+						//new path
+					}
+					railConnections++;
+				}
+			}
+			moves--;
+		}
+		pathcur++;
+	}
+
+	PlaceId *railPath;
+	return NULL;
+}
+
+ConnList createNode(PlaceId place, TransportType transport)
+{
+	ConnList node = malloc(sizeof(ConnList)); 
+	node->p = place;
+	node->type = transport;
+	node->next = NULL;
+	return node;
+}
+
+void newPath(HunterView hv, int pathnum, int pathcur, PlaceId place, TransportType transport){
+	ConnList *it = hv->
+
+	while(){
+
+	}
 }
