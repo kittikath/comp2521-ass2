@@ -47,6 +47,8 @@ PlaceId QueueLeave(Queue); // remove item from queue
 int QueueIsEmpty(Queue); // check for no items
 ConnList QueueLast(Queue Q);
 ConnList createNode(PlaceId place, TransportType transport);
+int countNodes(Queue Q);
+bool QueueContains(Queue Q, ConnList node);
 
 //shortest path
 void newPath(HunterView hv, int totalPath, int pathcur, PlaceId place, TransportType transport);
@@ -210,14 +212,16 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 							if(hv->pred[hv->railDest[c][steps]] < 0){
 								hv->pred[hv->railDest[c][steps]] = placeB4;
 								srcNode = createNode(hv->railDest[c][steps], RAIL);
-								printf("added to queue, %s %s\n", placeIdToName(hv->pred[hv->railDest[c][steps]]), placeIdToName(placeB4));
-								QueueJoin(Q, srcNode);
+								if(!QueueContains(Q, srcNode)){
+									QueueJoin(Q, srcNode);
+								}
 							}
-							if(hv->railDest[c][steps] == dest){
-								printf("--------------------------\n");
-								isFound = 1;
-								break;
-							}
+							// if(hv->railDest[c][steps] == dest){
+							// 	printf("--------------------------\n");
+							// 	isFound = 1;
+							// 	break;
+							// }
+							showQueue(Q);
 						}
 					}
 				}
@@ -226,11 +230,11 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 					QueueJoin(Q, curr);
 				}
 			}
-			if(curr->p == dest){ 
-			printf("~~~~~~~~~\n");
-				isFound = 1; 
-				break; 
-			}
+			// if(curr->p == dest){ 
+			// printf("~~~~~~~~~\n");
+			// 	isFound = 1; 
+			// 	break; 
+			// }
 			//check if theres another route other than rail,
 			//if there is switch the queue node for that one.
 			// showQueue(Q);
@@ -346,14 +350,59 @@ bool checkRail(HunterView hv, Player player, bool rail)
 
 int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId dest, Player player){
 	PlaceId currLoc;
+	int round = HvGetRound(hv);
+	int moves = (round+player)%4;
+	int length = 1;
+	//calculate moves per round
 	int predCopy[NUM_REAL_PLACES];
 	int movesPerRound[NUM_REAL_PLACES] = {0};
-	int round = HvGetRound(hv);
+	movesPerRound[length] = moves;
+	length++;
+	switch(moves){
+		case 1:
+			movesPerRound[length] = 2;
+			break;
+		case 2:
+			movesPerRound[length] = 1;
+			break;
+		case 3:
+			movesPerRound[length] = 2;
+			break;
+		case 0:
+			movesPerRound[length] = 1;
+			break;
+
+	}
+	length++;
+	for(int i = length; i < NUM_REAL_PLACES ; i++){
+		switch(movesPerRound[i-1]){
+			case 1:
+				switch(movesPerRound[i-2]){
+					case 2:
+						movesPerRound[i] = 1;
+						break;
+					case 0:
+						movesPerRound[i] = 1;
+						break;
+				}
+				break;
+			case 2:
+				movesPerRound[i] = 1;
+				break;
+			case 3:
+				movesPerRound[i] = 2;
+				break;
+			case 0:
+				movesPerRound[i] = 1;
+				break;
+		}
+	}
+
 	int pathcur = 0;
 	int totalpath = 0;
 	int railConnections = 0;
-	int moves;
 	int counter;
+	
 	for(int p = 0; p < NUM_REAL_PLACES; p++){
 		predCopy[p] = hv->pred[p];
 	}
@@ -367,10 +416,13 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 	ConnList node = createNode(startLoc, RAIL);
 	QueueJoin(&(hv->railPath[pathcur]), node);
 	ConnList curr = hv->railPath[pathcur].head;
+	// movesPerRound[round] = moves;
 	while(pathcur <= totalpath){
+		length = countNodes(&(hv->railPath[pathcur]));
+		printf("length is %d %d round\n", length, moves);
 		currLoc = hv->railPath[pathcur].tail->p;
 		moves = (round+player)%4;
-		movesPerRound[round] = moves;
+		// movesPerRound[round] = moves;
 		printf("start %s moves this round %d\n", placeIdToName(currLoc), moves);
 		counter = moves;
 		while(counter != 0){
@@ -411,9 +463,11 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 
 			}
 		}
-		round++;
-		// printf("-------------------- %d ROUND--------\n", round);
+		// round++;
 		pathcur++;
+		moves = movesPerRound[countNodes(&(hv->railPath[pathcur]))];
+		// printf("-------------------- %d ROUND--------\n", round);
+		
 	}
 
 	return totalpath;
@@ -533,4 +587,29 @@ ConnList QueueLast(Queue Q){
 		curr = curr->next;
 	}
 	return curr;
+}
+
+
+int countNodes(Queue Q){
+	int count = 0;
+	ConnList curr = Q->head;
+	printf("counting nodes");
+	while(curr != NULL){
+		printf("%s + ",placeIdToName(curr->p));
+		curr = curr->next;
+		count++;
+	}
+	printf("\n");
+	return count;
+}
+
+bool QueueContains(Queue Q, ConnList node){
+	ConnList curr = Q->head;
+	while(curr != NULL){
+		if(curr->p == node->p){
+			return true;
+		}
+		curr = curr->next;
+	}
+	return false;
 }
