@@ -30,6 +30,9 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves);
 char *getPlayerMove(char *pastPlays, Player player, Round round);
 
+int numTrailLocations(int numTrail, PlaceId *trail);
+int numTrailMoves(int numTrail, PlaceId *trail);
+
 struct draculaView {
 	// TODO: ADD FIELDS HERE
 	GameView gameView;
@@ -157,19 +160,29 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         }
     }
     
-    // building a valid moves array
-    
+    // building a valid moves array    
     int numValidMoves = numReachables;
     
+    // removing double back and hiding locations
+    numValidMoves -= numTrailMoves(numMoves, trailMoves);
+    
+    if (!doubleBack) {
+      numValidMoves += 1;
+    }
+    
+    /*
     // if he has already hidden, one less move
     if (hide) {
         numValidMoves -= 1;
     }
     
-    // if he has already double backed, 5 less valid moves
+    // if he has already double backed, trail locations are removed
     if (doubleBack) {
-        numValidMoves -= 5;
+        numValidMoves -= numLocations;
+    } else {
+        numValidMoves += 1;
     }
+    */
     
     if (numValidMoves == 0) {
         free(trailMoves);
@@ -207,8 +220,8 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     
     // add double backs if none present in trail
     if (!doubleBack) {
-        for (int i = DOUBLE_BACK_1; i <= DOUBLE_BACK_5; i++) {
-            validMoves[j] = i;
+        for (int i = 0; j < numValidMoves; i++) {
+            validMoves[j] = DOUBLE_BACK_1 + i;
             j++;
         }
     }
@@ -218,10 +231,7 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     free(reachables);
     
     *numReturnedMoves = numValidMoves;
-    return validMoves; 
-    
-    // just hope this doesn't throw a seg fault
-    
+    return validMoves;
     
 /*
 
@@ -415,19 +425,11 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
         }
     }
     
-    // building a valid moves array
-    
+    // building a valid moves array    
     int numValidLocations = numReachables;
     
-    // if he has already hidden, one less move
-    if (hide) {
-        numValidLocations -= 1;
-    }
-    
-    // if he has already double backed, 5 less valid moves
-    if (doubleBack) {
-        numValidLocations -= 5;
-    }
+    // removing double back and hiding locations
+    numValidLocations -= numTrailLocations(numMoves, trailMoves);
     
     if (numValidLocations == 0) {
         free(trailMoves);
@@ -456,19 +458,19 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
             j++;
         }
     }
-    
-    // add hide move if none present in trail
-    if (!hide) {
-        validLocations[j] = HIDE;
-        j++;
-    }
-    
-    // add double backs if none present in trail
+
+    // add double locations if none present in trail
     if (!doubleBack) {
-        for (int i = DOUBLE_BACK_1; i <= DOUBLE_BACK_5; i++) {
-            validLocations[j] = i;
+        for (int i = 1; j < numValidLocations; i++) {
+            validLocations[j] = trailLocations[numLocations - i];
             j++;
         }
+    }
+    
+     // add hide location if not already present
+    if (!hide && doubleBack) {
+        validLocations[j] = trailLocations[numLocations - 1];
+        j++;
     }
     
     free(trailMoves);
@@ -477,10 +479,6 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
     
     *numReturnedLocs = numValidLocations;
     return validLocations;
-    
-    // just hope this doesn't throw a seg fault
-
-
 
 /*
 	// TODO: Have not tested
@@ -568,3 +566,38 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
+
+// counts the number of locations in the trail
+int numTrailLocations(int numTrail, PlaceId *trail)
+{
+   // TODO:
+
+   int count = 0;   
+   for (int i = 0; i < numTrail; i++) {
+      if (placeIsReal(trail[i])) {
+         count++;
+      }   
+   }
+   return count;
+}
+
+// counts the number of moves in the trail
+int numTrailMoves(int numTrail, PlaceId *trail)
+{
+   // TODO:
+
+   int count = 0;   
+   for (int i = 0; i < numTrail; i++) {
+      if (!placeIsReal(trail[i])) {
+         count++;
+      }   
+   }
+   return count;
+}
+
+
+
+
+
+
+
