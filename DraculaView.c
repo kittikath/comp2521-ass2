@@ -126,49 +126,54 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     
     bool canFreeLocations = TRUE;
     int numLocations = 0;
-    PlaceId *trailLocations = GvGetLastLocations(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numLocations, &canFreeLocations);
+    PlaceId *trailLocations = GvGetLastLocations(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numLocations, 
+                                                 &canFreeLocations);
     
     int numReachables = 0;    
-    PlaceId *reachables = GvGetReachable(dv->gameView, PLAYER_DRACULA, DvGetRound(dv), DvGetPlayerLocation(dv, PLAYER_DRACULA), &numReachables);
+    PlaceId *reachables = GvGetReachable(dv->gameView, PLAYER_DRACULA, DvGetRound(dv), DvGetPlayerLocation(dv, 
+                                         PLAYER_DRACULA), &numReachables);
 
     // looking through trail moves, finding DOUBLE_BACK and HIDE moves
     bool hide = false;
+    
     bool doubleBack = false;
 
     for (int i = 0; i < numMoves; i++) {
         switch (trailMoves[i]) {
             case HIDE:
-                hide = true;
-                break;
+               hide = true;
+               break;
              case DOUBLE_BACK_1:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_2:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_3:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_4:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_5:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
 			   default:
-				   continue;
+					continue;
         }
     }
     
     // building a valid moves array    
     int numValidMoves = numReachables;
     
+    printf("number of valid moves: %d\n", numValidMoves);
+    
     // removing double back and hiding locations
     numValidMoves -= numTrailMoves(numMoves, trailMoves);
     
-    if (!doubleBack) {
+    /* if (!doubleBack) {
       numValidMoves += 1;
-    }
+    } */
     
     /*
     // if he has already hidden, one less move
@@ -191,6 +196,8 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         *numReturnedMoves = 0;
         return NULL;   
     }
+    
+    printf("number of valid moves: %d\n", numValidMoves);
         
     PlaceId *validMoves = malloc(numValidMoves * sizeof(*validMoves));
     // populating valid moves array
@@ -212,6 +219,14 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         }
     }
     
+    PlaceId *doubleBackLocs = malloc(5 * sizeof(*doubleBackLocs));
+    
+    for (int i = 0; i < numLocations; i++) {
+    	for (int j = 4; j >= 0; j--) {
+    		doubleBackLocs[j] = trailLocations[j];
+    	}
+    }
+    
     // add hide move if none present in trail
     if (!hide) {
         validMoves[j] = HIDE;
@@ -219,16 +234,29 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     }
     
     // add double backs if none present in trail
-    if (!doubleBack) {
+    /* if (!doubleBack) {
         for (int i = 0; j < numValidMoves; i++) {
             validMoves[j] = DOUBLE_BACK_1 + i;
             j++;
         }
+    } */
+    
+    for (int i = 0; i < numReachables; i++) {
+    	for (int j = 0; j < 5; j++) {
+    		if (!doubleBack && doubleBackLocs[j] == reachables[i]) {
+    			validMoves[numValidMoves] = DOUBLE_BACK_1 + j;
+    			numValidMoves++;
+    		}
+    	}
     }
+    
+    
     
     free(trailMoves);
     free(trailLocations);
     free(reachables);
+    
+    printf("number of valid moves: %d\n", numValidMoves);
     
     *numReturnedMoves = numValidMoves;
     return validMoves;
@@ -594,10 +622,3 @@ int numTrailMoves(int numTrail, PlaceId *trail)
    }
    return count;
 }
-
-
-
-
-
-
-
