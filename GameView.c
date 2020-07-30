@@ -256,6 +256,8 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 		char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
 		if (strncmp(move + 3, "T", 1) == 0) {
 			char *abbrev = strndup(move + 1, 2);
+			
+			// Dracula hides or double-backs
 			if (strcmp(abbrev, "HI") == 0 || strcmp(abbrev, "D1") == 0) {
 				trapLocations[laidTraps] = trapLocations[laidTraps - 1];
 			} else if (strcmp(abbrev, "D2") == 0) {
