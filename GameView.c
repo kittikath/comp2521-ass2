@@ -243,6 +243,8 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	
 	int destroyedTraps = 0;
 	
+	*numTraps = 0;
+	
 	PlaceId *totalTraps = malloc(numMoveHistory * sizeof(*totalTraps));
 	
 	PlaceId *trapLocations = malloc(laidTraps * sizeof(*trapLocations));
@@ -254,7 +256,21 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 		char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
 		if (strncmp(move + 3, "T", 1) == 0) {
 			char *abbrev = strndup(move + 1, 2);
-			trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			
+			// Dracula hides or double-backs
+			if (strcmp(abbrev, "HI") == 0 || strcmp(abbrev, "D1") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 1];
+			} else if (strcmp(abbrev, "D2") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 2];
+			} else if (strcmp(abbrev, "D3") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 3];
+			} else if (strcmp(abbrev, "D4") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 4];
+			} else if (strcmp(abbrev, "D5") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 5];
+			} else {
+				trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			}
 			(laidTraps)++;
 		}
 	}
