@@ -547,6 +547,32 @@ int main(void)
 		GvFree(gv);
 		printf("Test passed!\n");
 	}
+	
+   {///////////////////////////////////////////////////////////////////
+	   
+	   printf("Test for Dracula's valid moves 2\n");
+	
+			char *trail =
+			"GED.... SGE.... HZU.... MCA.... DCF.V.. "
+			"GMN.... SCFVD.. HGE.... MLS.... DBOT... "
+			"GLO.... SMR.... HCF.... MMA.... DTOT... "
+			"GPL.... SMS.... HMR.... MGR.... DBAT... "
+			"GLO.... SBATD.. HMS.... MMA.... DSRT... "
+			"GPL.... SSJ.... HBA.... MGR.... DALT... "
+			"GPL.... SSJ.... HBA.... MGR.... DMAT... "
+			"GLO.... SBE.... HMS.... MMATD.. ";
+		
+		Message messages[39] = {};
+		GameView gv = GvNew(trail, messages);
+	   
+	   int numReturnedLocs = - 1;
+	   PlaceId *Reach = GvGetReachable(gv, PLAYER_DRACULA, GvGetRound(gv),
+                        GvGetPlayerLocation(gv, PLAYER_DRACULA), &numReturnedLocs);
+	
+	
+	   assert(Reach != NULL);
+	
+	}
 
 	return EXIT_SUCCESS;
 }
