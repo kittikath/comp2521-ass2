@@ -291,16 +291,13 @@ PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
-	int returnedlocs = *numReturnedLocs;
 	int round = DvGetRound(dv);
-	if (player != PLAYER_DRACULA) {
-		return GvGetReachable(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), &returnedlocs);
-	}
-	else {
-		return GvGetReachable(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), &returnedlocs);
-	}
+	int returnedlocs = *numReturnedLocs;
+	PlaceId *reachables = GvGetReachable(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
+							player), &returnedlocs);
+	*numReturnedLocs = returnedlocs;
+	printf("numreturnedlocs is %d\n", returnedlocs);
+	return reachables;
 }
 
 PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
@@ -309,15 +306,19 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
-	int returnedlocs = *numReturnedLocs;
 	int round = DvGetRound(dv);
+	int returnedlocs = *numReturnedLocs;
 	if (player != PLAYER_DRACULA) {
-		return GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), true, true, true, &returnedlocs);
+		PlaceId *reachables = GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
+									player), road, rail, boat, &returnedlocs);
+		*numReturnedLocs = returnedlocs;
+		return reachables;
 	}
 	else {
-		return GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), true, false, true, &returnedlocs);
+		PlaceId *reachables = GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
+									player), road, rail, boat, &returnedlocs);
+		*numReturnedLocs = returnedlocs;
+		return reachables;
 	}
 }
 
