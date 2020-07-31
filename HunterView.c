@@ -190,11 +190,14 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	Queue Q = newQueue();
 	ConnList curr;
 	PlaceId currPlace;
-	int movesByRail = 0;
+	PlaceId *reachable;
+	int numReturnedLocs = 0;
+	// int movesByRail = 0;
+	int round = HvGetRound(hv);
 	int railMoves = (hunter+HvGetRound(hv))%4;
 	int isFound = 0;
-	int maxSteps = 3;
-	int c = 0;
+	// int maxSteps = 3;
+	// int c = 0;
 	QueueJoin(Q, srcNode);
 	while(!QueueIsEmpty(Q) && !isFound){
 		currPlace = QueueLeave(Q);
@@ -205,26 +208,24 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 			if(hv->pred[curr->p] == -1){
 				if(curr->type == RAIL && railMoves != 0 ){
 					hv->pred[curr->p] = currPlace;
-					// printf("%d %d, %s...\n", hv->pred[curr->p], curr->p, placeIdToName(hv->pred[curr->p]));
-					movesByRail = travelByRail(hv, m, curr->p, src, dest, railMoves);
-					railMoves = 0;
-					for(c = 0; c <= movesByRail; c++){
-						PlaceId placeB4 = hv->railDest[c][0];
-						for(int steps = 1; steps <= maxSteps; steps++){
-							if(hv->pred[hv->railDest[c][steps]] < 0){
-								hv->pred[hv->railDest[c][steps]] = placeB4;
-								srcNode = createNode(hv->railDest[c][steps], RAIL);
-								if(!QueueContains(Q, srcNode)){
-									QueueJoin(Q, srcNode);
-								}
-							}
-							// if(hv->railDest[c][steps] == dest){
-							// 	printf("--------------------------\n");
-							// 	isFound = 1;
-							// 	break;
-							// }
-							showQueue(Q);
+					reachable = GvGetReachableByType(hv->gameView, hunter, round, curr->p, false, true, false, &numReturnedLocs);
+					printf("%d %d!!!!!!!!!!!!!!!!!!!!!!!!!!!@@@@@@@@\n", numReturnedLocs, reachable[0]);
+					// movesByRail = travelByRail(hv, m, curr->p, src, dest, railMoves);
+					railMoves = 1;
+					for(int n = 0; n < numReturnedLocs; n++){
+						if(hv->pred[reachable[n]] == -1){
+							hv->pred[reachable[n]] = curr->p;
+						// printf("%d %d pred\n", hv->pred[reachable[n]], reachable[n]);
 						}
+						// hv->pred[reachable[n]] = currPlace;
+						// srcNode = createNode(reachable[n], RAIL);
+						// if(!QueueContains(Q, srcNode)){
+						// 	QueueJoin(Q, srcNode);
+						// }
+						// if(reachable[n] == dest){
+						// 	isFound = 1;
+						// 	break;
+						// }
 					}
 				}
 				else{
@@ -232,11 +233,11 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 					QueueJoin(Q, curr);
 				}
 			}
-			// if(curr->p == dest){ 
-			// printf("~~~~~~~~~\n");
-			// 	isFound = 1; 
-			// 	break; 
-			// }
+			if(curr->p == dest){ 
+			printf("~~~~~~~~~\n");
+				isFound = 1; 
+				break; 
+			}
 			//check if theres another route other than rail,
 			//if there is switch the queue node for that one.
 			// showQueue(Q);
