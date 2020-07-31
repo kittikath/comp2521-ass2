@@ -440,6 +440,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				}
 			}
 		}
+		
 		connRoad[numRoads] = from;
 		numRoads++;
 	}
@@ -486,6 +487,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				numRails++;
 			}
 		}
+		
 		printf("---------number of rail connections 1: %d---------\n", numRoads);
 		for (int i = 0; i < numRails; i++) {
 			printf("%s\n", placeIdToName(connRail[i]));
@@ -541,7 +543,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		nearby(europe, from, connBoat, &numBoats, BOAT);
 		
 		connBoat[numBoats] = from;
-
 		numBoats++;
 	}
 	
