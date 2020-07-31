@@ -342,30 +342,6 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 	//return GvGetReachableByType(hv->gameView, player, round, from, road, rail, boat, numReturnedLocs);
 }
 
-PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
-                          int *numReturnedLocs)
-{
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	int round = HvGetRound(hv);
-	int from = GvGetPlayerLocation(hv->gameView, player);
-	*numReturnedLocs = 0;
-	return GvGetReachableByType(hv->gameView, player, round, from, true, true, true, numReturnedLocs);
-}
-
-PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
-                                bool road, bool rail, bool boat,
-                                int *numReturnedLocs)
-{
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	int round = HvGetRound(hv);
-	int from = GvGetPlayerLocation(hv->gameView, player);
-	bool railCheck = checkRail(hv, player, rail);
-	*numReturnedLocs = 0;
-	PlaceId *hello = GvGetReachableByType(hv->gameView, player, round, from, road, railCheck, boat, numReturnedLocs);
-	return hello;
-	//return GvGetReachableByType(hv->gameView, player, round, from, road, rail, boat, numReturnedLocs);
-}
-
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
