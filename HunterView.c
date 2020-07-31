@@ -49,6 +49,7 @@ ConnList QueueLast(Queue Q);
 ConnList createNode(PlaceId place, TransportType transport);
 int countNodes(Queue Q);
 bool QueueContains(Queue Q, ConnList node);
+bool checkforMoreRails(Map m, PlaceId currLoc);
 // int findSteps(int length);
 
 //shortest path
@@ -353,10 +354,10 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 	PlaceId currLoc;
 	int round = HvGetRound(hv);
 	int moves = (round+player)%4;
-	int length = round;
+	int length = round; //length of movesPerRound array 
 	//calculate moves per round
 	int predCopy[NUM_REAL_PLACES];
-	int movesPerRound[NUM_REAL_PLACES] = {0};
+	int movesPerRound[NUM_REAL_PLACES] = {0}; //for every round, there are a specific number of moves 
 	movesPerRound[length] = moves;
 	printf("first num %d %d\n", moves, length);
 	printf("------------------------------------\n");
@@ -385,38 +386,42 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 				movesPerRound[i] = 0;
 				break;
 		}
-		// printf("number %d move %d\n", i, movesPerRound[i]);
 	}
 
 	int pathcur = 0;
 	int totalpath = 0;
 	int railConnections = 0;
 	int counter;
+	// bool moreRails = false;
 	
+	//create a copy of the current predecessor array without overwriting it,
+	//can measure if things have been visited. set to -2 if visited in this function
 	for(int p = 0; p < NUM_REAL_PLACES; p++){
 		predCopy[p] = hv->pred[p];
 	}
-	//set src location to -2 so it doesn't return 
+	//set beginning location to -2 so it doesn't go back to the start
 	predCopy[src] = -2; 
 	
+	//for each of the functions, set the first rail connection to start
 	for(int i = 0; i < NUM_REAL_PLACES; i++){
 		hv->railDest[i][0] = startLoc; 
 	}
 
 	ConnList node = createNode(startLoc, RAIL);
 	QueueJoin(&(hv->railPath[pathcur]), node);
-	// ConnList curr;
 	ConnList curr = hv->railPath[pathcur].head;
-	// movesPerRound[round] = moves;
+	//adjancency list
+	//total path contains how many total paths/lists there are
+	//cur path is the current path
 	while(pathcur <= totalpath){
+		//check for connections from the end of the list
 		currLoc = hv->railPath[pathcur].tail->p;
 		moves = movesPerRound[countNodes(&(hv->railPath[pathcur]))];
-		// movesPerRound[round] = moves;
 		printf("start %s moves this round %d length %d\n", placeIdToName(currLoc), moves, countNodes(&(hv->railPath[pathcur])));
 		counter = moves;
 		while(counter != 0){
 			//find rail connections
-			railConnections = 0;
+			railConnections = 0; //<-- check for current length is increasing
 			printf("---- %d round %d move %d----\n", round, moves, counter);
 			for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
 				// printf("pred %d %d  %s\n", curr->p, predCopy[curr->p], placeIdToName(curr->p));
@@ -436,14 +441,29 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 					predCopy[curr->p] = currLoc;
 					railConnections++;
 				}
-				// printf("\n");
 			}
-			// if(currLoc == hv->railPath[pathcur].tail->p && currLoc < totalpath){
-			// 	pathcur++;
-			// }
 			currLoc = hv->railPath[pathcur].tail->p;
-			counter--;	
+			//condition to keep the current pointer to keep finding stuff
+			//creates an infinite loop for the last test but kinda works for test 2 
+			//doesn't save the correct value
+			if(counter == 1){
+				// for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
+				// 	if(curr->type == RAIL && predCopy[curr->p] == -1){
+				// 		counter = movesPerRound[countNodes(&(hv->railPath[pathcur]))];
+				// 		hv->railDest[pathcur][round] = hv->railPath[pathcur].tail->p;
+				// 		printf("%s what is saved? %d \n", placeIdToName(hv->railDest[pathcur][round]), round);
+				// 		//need to update the railDest array which stores everything
+				// 		break;
+				// 	}
+				// }
+				//else decrement to 0 and go check the next list
+				counter--;
+			}else{
+				counter--;
+			}
+				
 		}
+		//save all the important values found for that round
 		if(moves > 0 && railConnections != 0){
 			for(int i = 0; i < totalpath+1; i++){
 				hv->railDest[i][round] = hv->railPath[i].tail->p; 
@@ -451,8 +471,23 @@ int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId de
 
 			}
 		}
-		// round++;
+		printf("check for currloc %s\n", placeIdToName(currLoc));
+		
+		//check if theres any more existing rail connections for current location
+		// for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
+		// 	if(curr->type == RAIL && predCopy[curr->p] == -1){
+		// 		moreRails = true;
+		// 		break;
+		// 	}
+		// }
 		pathcur++;
+		// if(!moreRails){
+		// 	pathcur++;
+		// 	printf("no connections for currloc %s\n", placeIdToName(currLoc));
+		// }
+		
+		// round++;
+		
 		// moves = movesPerRound[countNodes(&(hv->railPath[pathcur]))];		
 	}
 
@@ -598,6 +633,17 @@ bool QueueContains(Queue Q, ConnList node){
 	}
 	return false;
 }
+
+// bool checkforMoreRails(Map m, PlaceId currLoc){
+// 	ConnList curr;
+// 	for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
+// 		if(curr->type == RAIL && predCopy[curr->p] == -1){
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+// }
+
 
 // int findSteps(int position){
 // 	int round = hvGetRound(hv);
