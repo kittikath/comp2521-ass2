@@ -22,6 +22,7 @@
 // add your own #includes here
 
 #define PLAY_LEN 8
+#define MAX_TRAPS 18
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
@@ -239,17 +240,16 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	// TODO: still needs considering
 	int numMoveHistory = GvGetRound(gv) + 1;
 	
+	PlaceId trapLocations[MAX_TRAPS];
 	int laidTraps = 0;
 	
+	PlaceId removeLocations[MAX_TRAPS];
 	int destroyedTraps = 0;
 	
-	*numTraps = 0;
-	
-	PlaceId *totalTraps = malloc(numMoveHistory * sizeof(*totalTraps));
-	
-	PlaceId *trapLocations = malloc(laidTraps * sizeof(*trapLocations));
-	
-	PlaceId *removeLocations = malloc(destroyedTraps * sizeof(*removeLocations));
+	for (int i = 0; i < MAX_TRAPS; i++) {
+		trapLocations[i] = NOWHERE;
+		removeLocations[i] = NOWHERE;
+	}
 	
 	// Locations where Dracula laid a trap
 	for (int i = 0; i < numMoveHistory - 1; i++) {
@@ -271,34 +271,58 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 			} else {
 				trapLocations[laidTraps] = placeAbbrevToId(abbrev);
 			}
-			(laidTraps)++;
+			laidTraps++;
 		}
 	}
 	
 	// Locations where hunters have encounter a trap
 	for (int i = 0; i < numMoveHistory; i++) {
-		for (int j = 0; j < 4; j++) {
-			char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
-			if (strncmp(hunterMove + 3, "T", 1) == 0) {
-				char *abbrev = strndup(hunterMove + 1, 2);
-				removeLocations[destroyedTraps] = placeAbbrevToId(abbrev);
-				(destroyedTraps)++;
-			}
-		}
+		for (int j = 0; j < NUM_PLAYERS - 1; j++) {
+	      char *hunterMove = getPlayerMove(gv->pastPlays, j, i);
+	      if (hunterMove != NULL) {
+	         for (int k = 3; k < 7; k++) {
+	            if (hunterMove[k] == 'T') {
+	               char *abbrev = strndup(hunterMove + 1, 2);
+						removeLocations[destroyedTraps] = placeAbbrevToId(abbrev);
+						destroyedTraps++;;
+	            }
+	         }
+	      }
+	   }
 	}
+	
+	printf("--------------number of laid traps: %d--------------\n", laidTraps);
+	for (int i = 0; i < laidTraps; i++) {
+		printf("%s\n", placeIdToName(trapLocations[i]));
+	}
+	
+	printf("--------------number of destroyed traps: %d--------------\n", destroyedTraps);
+	for (int i = 0; i < destroyedTraps; i++) {
+		printf("%s\n", placeIdToName(removeLocations[i]));
+	}
+	
+	*numTraps = laidTraps - destroyedTraps;
+	
+	PlaceId *totalTraps = malloc((*numTraps) * sizeof(*totalTraps));
 	
 	// Record locations where traps exist
-	for (int i = 0; i < laidTraps; i++) {
-		if (trapLocations[i] != removeLocations[i]) {
-			totalTraps[*numTraps] = trapLocations[i];
-			(*numTraps)++;
+	for (int i = 0, j = 0; i < laidTraps; i++) {
+		bool isRemoved = false;
+		for (int k = 0; k < destroyedTraps; k++) {
+			if (trapLocations[i] == removeLocations[k]) {
+				isRemoved = true;
+			}
+		}
+		if (!isRemoved && placeIsLand(trapLocations[i])) {
+			totalTraps[j] = trapLocations[i];
+			j++;
 		}
 	}
 	
-	// Free memory
-	free(trapLocations);
-	
-	free(removeLocations);
+	printf("--------------number of remaining traps: %d--------------\n", *numTraps);
+	for (int i = 0; i < *numTraps; i++) {
+		printf("%s\n", placeIdToName(totalTraps[i]));
+	}
 	
 	return totalTraps;
 }
@@ -381,7 +405,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
-	// TODO: done?
+	// TODO: DONE needs commenting
 	Map europe = MapNew();
 	
 	int numRoads = 0;
@@ -468,8 +492,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(connRail[i]));
 		}
 		
-		// int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size2);
-		
 		// Array of second set of stations
 		for (int i = 0; i < firstStations; i++) {
 			nearby(europe, connFirst[i], connSec, &secStations, RAIL);
@@ -484,19 +506,12 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				numRails++;
 			}
 		}
-		printf("---------number of rail connections 2: %d---------\n", numRoads);
+		
+		printf("---------number of rail connections 1: %d---------\n", numRoads);
 		for (int i = 0; i < numRails; i++) {
 			printf("%s\n", placeIdToName(connRail[i]));
 		}
-/*			
-		printf("---------------------Debugging------------------------\n");
-		printf("---------------------travel = 2------------------------\n");
-		printf("number of noDups: %d\n", numStations);
-		printf ("locations:\n");
-		for (int i = 0; i < numStations; i++) {
-			printf("%s\n", placeIdToName(noDups[i]));
-		}
-*/
+		
 		// Remove duplicates of locations of 3rd stations
 		for (int i = 0; i < secStations; i++) {
 			nearby(europe, connSec[i], connThird, &thirdStations, RAIL);			
@@ -515,49 +530,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(connRail[i]));
 		}
 		
-		
-/*
-		if (travelRail == 3) {
-			for (int i = 0; i < numStationsSec; i++) {
-				bool visited = false;
-				for (int j= 0; j < railStations; j++) {
-					if (noDupsSec[i] == connRail[j]) {
-						visited = true;
-					}
-				}
-				for (int k = 0; k < SecStations; k++) {
-					if (noDupsSec[i] == connSec[k]) {
-						visited = true;
-					}
-				}
-				if (!visited) {
-					connRail[numRails] = noDupsSec[i];
-					numRails++;
-				}
-			}
-		}
-*/
-/*		
-		printf("---------------------travel = 3------------------------\n");
-		printf("number of noDups: %d\n", numStations);
-		printf ("locations:\n");
-		for (int i = 0; i < numStations; i++) {
-			printf("%s\n", placeIdToName(noDups[i]));
-		}
-		printf("\n");
-		printf("number of secStations: %d\n", secStations);
-		printf ("locations:\n");
-		for (int i = 0; i < secStations; i++) {
-			printf("%s\n", placeIdToName(connSec[i]));
-		}
-		printf("\n");
-		printf("number of noDupsSec: %d\n", numStationsSec);
-		printf ("locations:\n");
-		for (int i = 0; i < numStationsSec; i++) {
-			printf("%s\n", placeIdToName(noDupsSec[i]));
-		}
-		printf("-------------------End of debugging---------------------\n");
-*/		
 		connRail[numRails] = from;
 		numRails++;
 	}
