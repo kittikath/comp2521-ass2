@@ -53,6 +53,7 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
                          int *numReturnedMoves);
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves);
 
+PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type);
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
 
@@ -243,6 +244,8 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	
 	int destroyedTraps = 0;
 	
+	*numTraps = 0;
+	
 	PlaceId *totalTraps = malloc(numMoveHistory * sizeof(*totalTraps));
 	
 	PlaceId *trapLocations = malloc(laidTraps * sizeof(*trapLocations));
@@ -254,7 +257,21 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 		char *move = getPlayerMove(gv->pastPlays, PLAYER_DRACULA, i);
 		if (strncmp(move + 3, "T", 1) == 0) {
 			char *abbrev = strndup(move + 1, 2);
-			trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			
+			// Dracula hides or double-backs
+			if (strcmp(abbrev, "HI") == 0 || strcmp(abbrev, "D1") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 1];
+			} else if (strcmp(abbrev, "D2") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 2];
+			} else if (strcmp(abbrev, "D3") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 3];
+			} else if (strcmp(abbrev, "D4") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 4];
+			} else if (strcmp(abbrev, "D5") == 0) {
+				trapLocations[laidTraps] = trapLocations[laidTraps - 5];
+			} else {
+				trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+			}
 			(laidTraps)++;
 		}
 	}
@@ -375,20 +392,22 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	connections[0] = from;
 	
-	ConnList curr;
-	
 	if (road) {
 		
 		int addRoad = 1;
 		
 		PlaceId *insert = malloc(addRoad * sizeof(*insert));
 		
+		insert = nearby(europe, from, insert, &addRoad, ROAD);
+		
+		/*
 		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
 			if (curr->type == ROAD) {
 				insert[addRoad] = curr->p;
 				addRoad++;
 			}
 		}
+		*/
 		
 		for (int i = 1; i < addRoad; i++) {
 			if (player == PLAYER_DRACULA && insert[i] == ST_JOSEPH_AND_ST_MARY) {
@@ -401,27 +420,134 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	}
 	
 	if (boat) {
+	
+		connections = nearby(europe, from, connections, numReturnedLocs, BOAT);
+		/*
 		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
 			if (curr->type == BOAT) {
 				connections[*numReturnedLocs] = curr->p;
 				(*numReturnedLocs)++;
 			}
 		}
+		*/
 	}
 	
+	// PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
+	
 	if (rail) {
-		int numStations = (player + round) % 4;
-		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
-			if (curr->type == RAIL) {
-				if (numStations) {
-					connections[*numReturnedLocs] = curr->p;
-					(*numReturnedLocs)++;
-				}
-				if (numStations == 0 || player == PLAYER_DRACULA) {
-					return connections;
+		
+		int travelRail = (player + round) % 4;
+		
+		int railStations = 0;
+		
+		int nextStations = 0;
+		
+		int secStations = 0;
+		
+		int totalStations = 0;
+		
+		PlaceId *connRail = malloc(railStations * sizeof(*connRail));
+		
+		PlaceId *connNext = malloc(nextStations * sizeof(*connNext));
+		
+		PlaceId *connSec = malloc(secStations * sizeof(*connSec));
+		
+		PlaceId *connTotal = malloc(totalStations *sizeof(*connTotal));
+		
+		connections[0] = from;
+		
+		if (travelRail == 0 || player == PLAYER_DRACULA) {
+			return connections;
+		}
+		
+		if (travelRail >= 1) {
+			connRail = nearby(europe, from, connRail, &railStations, RAIL);
+			for (int i = 0; i < railStations; i++) {
+				connections[*numReturnedLocs] = connRail[i];
+				(*numReturnedLocs)++;
+			}
+			
+			// debugging
+			printf("number of railStations: %d\n", railStations);
+			for (int i = 0; i < railStations; i++) {
+				printf("%s\n", placeIdToName(connRail[i]));
+			}
+		
+			printf("\n");
+		
+			printf("number of connections: %d\n", *numReturnedLocs);
+			for (int i = 0; i < *numReturnedLocs; i++) {
+				printf("%s\n", placeIdToName(connections[i]));
+			}
+			printf("-------------------\n");
+			
+		}
+		
+		if (travelRail >= 2) {
+			for (int i = 0; i < railStations; i++) {
+				connNext = nearby(europe, connRail[i], connNext, &nextStations, RAIL);
+				for (int j = 0; j < nextStations; j++) {
+					if (connNext[j] != from && connNext[i] != connNext[j] 
+						 && connNext[j] != connRail[i]) {
+						connections[*numReturnedLocs] = connNext[j];
+						(*numReturnedLocs)++;
+						connTotal[totalStations] = connNext[j];
+						totalStations++;
+					}
 				}
 			}
+			// debugging
+			printf("number of nextStations: %d\n", nextStations);
+			for (int i = 0; i < nextStations; i++) {
+				printf("%s\n", placeIdToName(connNext[i]));
+			}
+			printf("\n");
+		
+			// debugging
+			printf("number of totalStations: %d\n", totalStations);
+			for (int i = 0; i < totalStations; i++) {
+				printf("%s\n", placeIdToName(connTotal[i]));
+			}
+			printf("\n");
+		
+			printf("number of connections: %d\n", *numReturnedLocs);
+			for (int i = 0; i < *numReturnedLocs; i++) {
+				printf("%s\n", placeIdToName(connections[i]));
+			}
+			printf("-------------------\n");
 		}
+		
+		
+		if (travelRail == 3) {
+			for (int i = 0; i < totalStations; i++) {
+				connSec = nearby(europe, connTotal[i], connSec, &secStations, RAIL);
+				for (int j = 0; j < secStations; j++) {
+					if (connSec[j] != from && connSec[i] != connSec[j]
+						 && connTotal[i] != connSec[j]) {
+						connections[*numReturnedLocs] = connSec[j];
+						(*numReturnedLocs)++;
+					}
+				}
+			}
+			
+			// debugging
+			printf("number of secStations: %d\n", secStations);
+			for (int i = 0; i < secStations; i++) {
+				printf("%s\n", placeIdToName(connSec[i]));
+			}
+			printf("\n");
+		
+			printf("number of connections: %d\n", *numReturnedLocs);
+			for (int i = 0; i < *numReturnedLocs; i++) {
+				printf("%s\n", placeIdToName(connections[i]));
+			}
+			printf("-------------------\n");
+		}
+		
+		free(connRail);
+		free(connNext);
+		free(connSec);
+		free(connTotal);
 	}
 	
 	return connections;
@@ -447,6 +573,7 @@ char *getLastMove(GameView gv, Player player)
    if (GvGetRound(gv) == 0 && GvGetPlayer(gv) <= player) {
       return NULL;
    }
+
 
    char *string = strdup(gv->pastPlays);
    char delim[] = " ";
@@ -711,7 +838,6 @@ int hunterDeathCount(GameView gv)
 
 //------------------------ health helper functions -----------------------------
 
-
 // updates the hunter's health according to the encounters in the turn
 int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc)
 {
@@ -770,4 +896,20 @@ int updateDraculaHealth(GameView gv, char *move, int health)
       free(location);
    }
    return health;
+}
+
+//------------------------ reachable helper functions --------------------------
+
+PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
+{
+	ConnList curr;
+	
+	for (curr = MapGetConnections(m, from); curr !=NULL; curr = curr->next) {
+		if (curr->type == type || curr->type == ANY) {
+			near[*size] = curr->p;
+			(*size)++;
+		}
+	}
+	
+	return near;
 }
