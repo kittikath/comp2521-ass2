@@ -329,14 +329,23 @@ PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
+	// for hunters
 	if (player != PLAYER_DRACULA) {
 		int returnedlocs = *numReturnedLocs;
 		PlaceId *reachables = HvWhereCanIGo(hv, &returnedlocs);
 		*numReturnedLocs = returnedlocs;
 		return reachables;
 	}
+	// for dracula
 	else {
 		int returnedlocs = *numReturnedLocs;
+		PlaceId *lastLoc = playerLastMoves(hv->gameView, player, 1, &returnedlocs);
+		// if dracula's last location is not revealed(i.e value is not a REAL place)
+		// then return null
+		if (!placeIsReal(lastLoc[0])) {
+			*numReturnedLocs = 0;
+			return NULL;
+		}
 		PlaceId *reachables = WhereCanDraculaGoByType(hv, true, true, &returnedlocs);
 		*numReturnedLocs = returnedlocs;
 		return reachables;
@@ -348,14 +357,22 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
                                 int *numReturnedLocs)
 {
 	*numReturnedLocs = 0;
+	// for hunters
 	if (player != PLAYER_DRACULA) {
 		int returnedlocs = *numReturnedLocs;
 		PlaceId *reachables = HvWhereCanIGoByType(hv, road, rail, boat, &returnedlocs);
 		*numReturnedLocs = returnedlocs;
 		return reachables;
 	}
+	// for dracula
 	else {
 		int returnedlocs = *numReturnedLocs;
+		PlaceId *lastLoc = playerLastMoves(hv->gameView, player, 1, &returnedlocs);
+		printf("hi\n");
+		if (!placeIsReal(lastLoc[0])) {
+			*numReturnedLocs = 0;
+			return NULL;
+		}
 		PlaceId *reachables = WhereCanDraculaGoByType(hv, road, boat, &returnedlocs);
 		*numReturnedLocs = returnedlocs;
 		return reachables;

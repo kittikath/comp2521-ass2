@@ -26,13 +26,9 @@
 #define FALSE 0
 
 // TODO: ADD YOUR OWN STRUCTS HERE
-PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
-                        int *numReturnedMoves);
-char *getPlayerMove(char *pastPlays, Player player, Round round);
 int numTrailLocations(int numTrail, PlaceId *trail);
 
 struct draculaView {
-	// TODO: ADD FIELDS HERE
 	GameView gameView;
 	char *pastPlays;
 	Message *messages;
@@ -44,7 +40,7 @@ struct draculaView {
 // initialise traps and vampires
 DraculaView DvNew(char *pastPlays, Message messages[])
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE
 	DraculaView new = malloc(sizeof(*new));
 	if (new == NULL) {
 		fprintf(stderr, "Couldn't allocate DraculaView\n");
@@ -60,7 +56,7 @@ DraculaView DvNew(char *pastPlays, Message messages[])
 
 void DvFree(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE
 	free(dv);
 }
 
@@ -249,14 +245,15 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 {
-   // TODO:
+   // TODO: DONE!
 
    *numReturnedLocs = 0;
+   // if dracula has not made a move yet
    if (DvGetPlayerLocation(dv, PLAYER_DRACULA) == NOWHERE) {
       return NULL;
    }
-
 	int returnedlocs = *numReturnedLocs;
+   // this will return all the locations dracula can go to
 	PlaceId *reachables = DvWhereCanIGoByType(dv, true, true, &returnedlocs);
 	*numReturnedLocs = returnedlocs;
 	return reachables;
@@ -265,8 +262,9 @@ PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
-	// TODO:
+	// TODO: DONE!
 
+   // if dracula has not made a move yet
    if (DvGetPlayerLocation(dv, PLAYER_DRACULA) == NOWHERE) {
       *numReturnedLocs = 0;
       return NULL;
@@ -393,6 +391,7 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
 
    printf("numValidLocations: %d\n", numValidLocations);
 
+   // free memory
    free(trailMoves);
    free(trailLocations);
    free(reachables);
@@ -404,14 +403,13 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
 PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
                           int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE
 	*numReturnedLocs = 0;
 	int round = DvGetRound(dv);
 	int returnedlocs = *numReturnedLocs;
 	PlaceId *reachables = GvGetReachable(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
 							player), &returnedlocs);
 	*numReturnedLocs = returnedlocs;
-	printf("numreturnedlocs is %d\n", returnedlocs);
 	return reachables;
 }
 
@@ -419,22 +417,14 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE
 	*numReturnedLocs = 0;
 	int round = DvGetRound(dv);
 	int returnedlocs = *numReturnedLocs;
-	if (player != PLAYER_DRACULA) {
-		PlaceId *reachables = GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), road, rail, boat, &returnedlocs);
-		*numReturnedLocs = returnedlocs;
-		return reachables;
-	}
-	else {
-		PlaceId *reachables = GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
-									player), road, rail, boat, &returnedlocs);
-		*numReturnedLocs = returnedlocs;
-		return reachables;
-	}
+   PlaceId *reachables = GvGetReachableByType(dv->gameView, player, round, GvGetPlayerLocation(dv->gameView, 
+                        player), road, rail, boat, &returnedlocs);
+   *numReturnedLocs = returnedlocs;
+   return reachables;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -443,8 +433,6 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 // counts the number of locations in the trail
 int numTrailLocations(int numTrail, PlaceId *trail)
 {
-   // TODO:
-
    int count = 0;   
    for (int i = 0; i < numTrail; i++) {
       if (placeIsReal(trail[i])) {
