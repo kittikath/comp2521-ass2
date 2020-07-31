@@ -19,12 +19,9 @@
 #include "GameView.h"
 #include "Map.h"
 #include "Places.h"
-// add your own #includes here
 
 #define PLAY_LEN 8
 #define MAX_TRAPS 18
-
-// TODO: ADD YOUR OWN STRUCTS HERE
 
 struct gameView {
 	// TODO: DONE!
@@ -35,6 +32,7 @@ struct gameView {
 
 // helper functions
 
+//------------------------- general helper prototypes --------------------------
 char *getLastMove(GameView gv, Player player);
 char* getPlayerMove(char *pastPlays, Player player, Round round);
 
@@ -43,17 +41,27 @@ bool placeMatch(char *pastPlays, Player player, PlaceId Place,
 Round placeBeenF(char *pastPlays, Player player, PlaceId place);
 Round placeBeenL(char *pastPlays, Player player, PlaceId place);
 
-int updateHunterHealth(char *move, int health, PlaceId prevLoc, PlaceId currLoc);
-int updateDraculaHealth(GameView gv, char *move, int health);
+//------------------------- score helper prototypes ----------------------------
+
 int hunterDeathCount(GameView gv);
+
+//------------------------ health helper functions -----------------------------
+int updateHunterHealth(char *move, int health, PlaceId prevLoc, 
+                       PlaceId currLoc);
+int updateDraculaHealth(GameView gv, char *move, int health);
+
+// ------------------ move-location helper prototypes --------------------------
 
 PlaceId *playerMoveHistory(GameView gv, Player player, int *numReturnedMoves);
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                          int *numReturnedMoves);
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves);
 
+//------------------------ reachable helper prototypes -------------------------
+
 void nearby(Map m, PlaceId from, PlaceId *near, int *size, int type);
 int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2);
+
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
 
@@ -146,10 +154,6 @@ int GvGetHealth(GameView gv, Player player)
             prevLoc = currLoc;      
          }
       }
-      // TODO: keep this commented code, might be handy/
-      //if (health == 0 && GvGetPlayerLocation(gv, player) == HOSPITAL_PLACE) {
-      //   health = GAME_START_HUNTER_LIFE_POINTS;
-      //}
    } else {
       health = GAME_START_BLOOD_POINTS;
       // loop through rounds
@@ -168,7 +172,7 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-   // TODO: DONE! - needs testing
+   // TODO: DONE!
    
    char *move = getLastMove(gv, player);
    
@@ -197,7 +201,7 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 
 PlaceId GvGetVampireLocation(GameView gv)
 {
-	// TODO: DONE! - but needs testing
+	// TODO: DONE!
 
    // no vampires after 6th round in each cycle or at start of cycle
    if (GvGetRound(gv) % 13 > 6 || GvGetRound(gv) % 13 == 0) {
@@ -237,18 +241,18 @@ PlaceId GvGetVampireLocation(GameView gv)
 
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 {
-	// TODO: still needs considering
+	// TODO: DONE!
 	int numMoveHistory = GvGetRound(gv) + 1;
 	
-	PlaceId trapLocations[MAX_TRAPS];
-	int laidTraps = 0;
+	PlaceId laidLocs[MAX_TRAPS];
+	int numLaid = 0;
 	
-	PlaceId removeLocations[MAX_TRAPS];
-	int destroyedTraps = 0;
+	PlaceId removedLocs[MAX_TRAPS];
+	int numDestroyed = 0;
 	
 	for (int i = 0; i < MAX_TRAPS; i++) {
-		trapLocations[i] = NOWHERE;
-		removeLocations[i] = NOWHERE;
+		laidLocs[i] = NOWHERE;
+		removedLocs[i] = NOWHERE;
 	}
 	
 	// Locations where Dracula laid a trap
@@ -259,20 +263,21 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 			
 			// Dracula hides or double-backs
 			if (strcmp(abbrev, "HI") == 0 || strcmp(abbrev, "D1") == 0) {
-				trapLocations[laidTraps] = trapLocations[laidTraps - 1];
+				laidLocs[numLaid] = laidLocs[numLaid - 1];
 			} else if (strcmp(abbrev, "D2") == 0) {
-				trapLocations[laidTraps] = trapLocations[laidTraps - 2];
+				laidLocs[numLaid] = laidLocs[numLaid - 2];
 			} else if (strcmp(abbrev, "D3") == 0) {
-				trapLocations[laidTraps] = trapLocations[laidTraps - 3];
+				laidLocs[numLaid] = laidLocs[numLaid - 3];
 			} else if (strcmp(abbrev, "D4") == 0) {
-				trapLocations[laidTraps] = trapLocations[laidTraps - 4];
+				laidLocs[numLaid] = laidLocs[numLaid - 4];
 			} else if (strcmp(abbrev, "D5") == 0) {
-				trapLocations[laidTraps] = trapLocations[laidTraps - 5];
+				laidLocs[numLaid] = laidLocs[numLaid - 5];
 			} else {
-				trapLocations[laidTraps] = placeAbbrevToId(abbrev);
+				laidLocs[numLaid] = placeAbbrevToId(abbrev);
 			}
-			laidTraps++;
+			numLaid++;
 		}
+
 	}
 	
 	// Locations where hunters have encounter a trap
@@ -283,48 +288,48 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	         for (int k = 3; k < 7; k++) {
 	            if (hunterMove[k] == 'T') {
 	               char *abbrev = strndup(hunterMove + 1, 2);
-						removeLocations[destroyedTraps] = placeAbbrevToId(abbrev);
-						destroyedTraps++;;
+						removedLocs[numDestroyed] = placeAbbrevToId(abbrev);
+						numDestroyed++;;
 	            }
 	         }
 	      }
 	   }
 	}
 	
-	printf("--------------number of laid traps: %d--------------\n", laidTraps);
-	for (int i = 0; i < laidTraps; i++) {
-		printf("%s\n", placeIdToName(trapLocations[i]));
+	printf("--------------number of laid traps: %d--------------\n", numLaid);
+	for (int i = 0; i < numLaid; i++) {
+		printf("%s\n", placeIdToName(laidLocs[i]));
 	}
 	
-	printf("--------------number of destroyed traps: %d--------------\n", destroyedTraps);
-	for (int i = 0; i < destroyedTraps; i++) {
-		printf("%s\n", placeIdToName(removeLocations[i]));
+	printf("--------------number of destroyed traps: %d--------------\n", numDestroyed);
+	for (int i = 0; i < numDestroyed; i++) {
+		printf("%s\n", placeIdToName(removedLocs[i]));
 	}
 	
-	*numTraps = laidTraps - destroyedTraps;
+	*numTraps = numLaid - numDestroyed;
 	
-	PlaceId *totalTraps = malloc((*numTraps) * sizeof(*totalTraps));
+	PlaceId *trapLocs = malloc((*numTraps) * sizeof(*trapLocs));
 	
 	// Record locations where traps exist
-	for (int i = 0, j = 0; i < laidTraps; i++) {
+	for (int i = 0, j = 0; i < numLaid; i++) {
 		bool isRemoved = false;
-		for (int k = 0; k < destroyedTraps; k++) {
-			if (trapLocations[i] == removeLocations[k]) {
+		for (int k = 0; k < numDestroyed; k++) {
+			if (laidLocs[i] == removedLocs[k]) {
 				isRemoved = true;
 			}
 		}
-		if (!isRemoved && placeIsLand(trapLocations[i])) {
-			totalTraps[j] = trapLocations[i];
+		if (!isRemoved && placeIsLand(laidLocs[i])) {
+			trapLocs[j] = laidLocs[i];
 			j++;
 		}
 	}
 	
 	printf("--------------number of remaining traps: %d--------------\n", *numTraps);
 	for (int i = 0; i < *numTraps; i++) {
-		printf("%s\n", placeIdToName(totalTraps[i]));
+		printf("%s\n", placeIdToName(trapLocs[i]));
 	}
 	
-	return totalTraps;
+	return trapLocs;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -396,7 +401,7 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 PlaceId *GvGetReachable(GameView gv, Player player, Round round,
                         PlaceId from, int *numReturnedLocs)
 {
-	// TODO: Need to include rail case. Needs testing.
+	// TODO: DONE!
 	return GvGetReachableByType(gv, player, round, from, true, true, true, 
 	                     numReturnedLocs);
 }
@@ -405,7 +410,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
-	// TODO: DONE needs commenting
+	// TODO: DONE!
 	Map europe = MapNew();
 	
 	int numRoads = 0;
@@ -425,6 +430,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	if (road) {
 		
+		// Get list of road connections from selected point
 		nearby(europe, from, connRoad, &numRoads, ROAD);
 		
 		if (player == PLAYER_DRACULA) {
@@ -438,16 +444,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		numRoads++;
 	}
 	
-	if (boat) {
-		nearby(europe, from, connBoat, &numBoats, BOAT);
-		connBoat[numBoats] = from;
-		numBoats++;
-	}
-	
-	// PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
-	
 	int travelRail = (player + round) % 4;
 	
+	// Dracula can't travel by rail
 	if (travelRail == 0 || player == PLAYER_DRACULA) {
 		connRail[0] = from;
 	}
@@ -479,9 +478,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			noDupsSec[i] = NOWHERE;
 		}
 		
+		// Get first set of rail connections
 		nearby(europe, from, connFirst, &firstStations, RAIL);
 		if (travelRail >= 1) {
-			// Copying first set of stations to rail connecitons
 			for (int i = 0; i < firstStations; i++) {
 				connRail[i] = connFirst[i];
 				numRails++;
@@ -492,12 +491,13 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(connRail[i]));
 		}
 		
-		// Array of second set of stations
+		// Get second set of rail connections
 		for (int i = 0; i < firstStations; i++) {
 			nearby(europe, connFirst[i], connSec, &secStations, RAIL);
 		}
 		
-		numStations = removeDups(connSec, noDups, NUM_REAL_PLACES, NUM_REAL_PLACES);
+		numStations = removeDups(connSec, noDups, NUM_REAL_PLACES, 
+		                         NUM_REAL_PLACES);
 		
 		// Appending second set of stations to reachable locations
 		if (travelRail >= 2) {
@@ -512,13 +512,15 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(connRail[i]));
 		}
 		
-		// Remove duplicates of locations of 3rd stations
+		// Get third set of rail connections
 		for (int i = 0; i < secStations; i++) {
 			nearby(europe, connSec[i], connThird, &thirdStations, RAIL);			
 		}
 		
-		numStationsSec = removeDups(connThird, noDupsSec, NUM_REAL_PLACES, NUM_REAL_PLACES);
+		numStationsSec = removeDups(connThird, noDupsSec, NUM_REAL_PLACES, 
+		                            NUM_REAL_PLACES);
 		
+		// Append third set of stations to reachable locations
 		if (travelRail == 3) {
 			for (int i  = 0; i < numStationsSec; i++) {
 				connRail[numRails] = noDupsSec[i];
@@ -533,7 +535,17 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		connRail[numRails] = from;
 		numRails++;
 	}
+	
+	if (boat) {
+		// Get list of boat connections from selected point
+		nearby(europe, from, connBoat, &numBoats, BOAT);
+		
+		connBoat[numBoats] = from;
 
+		numBoats++;
+	}
+	
+	// Append road, boat and rail connections
 	PlaceId connTotalDups[NUM_REAL_PLACES];
 	int totalDups = 0;
 	
@@ -580,7 +592,8 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		printf("%s\n", placeIdToName(connTotalDups[i]));
 	}
 	
-	numTotal = removeDups(connTotalDups, connTotal, NUM_REAL_PLACES, NUM_REAL_PLACES);
+	numTotal = removeDups(connTotalDups, connTotal, NUM_REAL_PLACES, 
+	                      NUM_REAL_PLACES);
 	
 	printf("----------value of numTotal: %d---------------\n", numTotal);
 	
@@ -588,11 +601,11 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(*connections));
 	
+	// Copy appended connecitons to total reachable locations
 	for (int i = 0; i < numTotal; i++) {
 		connections[i] = connTotal[i];
 	}
 	
-	// COPY FINAL ARRAY INTO CONNECTIONS!
 	return connections;
 }
 
@@ -610,7 +623,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 // if player has not made a turn at all, returns NULL
 char *getLastMove(GameView gv, Player player)
 {
-   // TODO: DONE! - needs a bit of testing
+   // TODO: DONE!
    
    // player has not made a turn at all
    if (GvGetRound(gv) == 0 && GvGetPlayer(gv) <= player) {
@@ -641,7 +654,7 @@ char *getLastMove(GameView gv, Player player)
 // if the player has not made a move in the given round, it will return NULL
 char *getPlayerMove(char *pastPlays, Player player, Round round)
 {
-   // TODO: DONE! - needs a bit of testing
+   // TODO: DONE!
 
    char *string = strdup(pastPlays);
    char delim[] = " ";
@@ -663,7 +676,7 @@ char *getPlayerMove(char *pastPlays, Player player, Round round)
 bool placeMatch(char *pastPlays, Player player, PlaceId place,
                 Round roundStart, Round roundEnd)
 {
-   // TODO: DONE! - needs a bit of testing
+   // TODO: DONE!
 
    char *string = strdup(pastPlays);
    char delim[] = " ";
@@ -694,7 +707,7 @@ bool placeMatch(char *pastPlays, Player player, PlaceId place,
 // returns -1 if player has not been to the place
 Round placeBeenF(char *pastPlays, Player player, PlaceId place)
 {
-   // TODO: DONE! - needs a bit of testing
+   // TODO: DONE!
 
    char *string = strdup(pastPlays);
    char delim[] = " ";
@@ -719,7 +732,7 @@ Round placeBeenF(char *pastPlays, Player player, PlaceId place)
 // returns -1 if player has not been to the place
 Round placeBeenL(char *pastPlays, Player player, PlaceId place)
 {
-   // TODO: DONE! - needs a bit of testing
+   // TODO: DONE!
 
    char *string = strdup(pastPlays);
    char delim[] = " ";
@@ -945,6 +958,7 @@ int updateDraculaHealth(GameView gv, char *move, int health)
 
 //------------------------ reachable helper functions --------------------------
 
+// Store connections from a selected point into an array
 void nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
 {
 	ConnList curr;
@@ -957,7 +971,9 @@ void nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
 	}
 }
 
-int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2) {
+// Remove duplicates from an array and store in empty array
+int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2)
+{
 	int j = 0;
    for (int i = 0; i < size; i++) {
      bool inArray = false;
