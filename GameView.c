@@ -385,7 +385,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	*numReturnedLocs = 1;
 	
-	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(connections));
+	PlaceId *connections = malloc((*numReturnedLocs) * sizeof(connections)); // dont malloc until end.
 	
 	Map europe = MapNew();
 	
@@ -527,7 +527,24 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		printf("-------------------End of debugging---------------------\n");
 */		
 	}
+/*	
+	// append twice!
 	
+	PlaceId *final[NUM_REAL_PLACES];
+	int FINAL = 0;
+	
+	FINAL += removeDups(roadcon, final, NUM_REAL_PLACES, NUM_REAL_PLACES);
+	
+	FINAL += removeDups(boatcon, final, NUM_REAL_PLACES, NUM_REAL_PLACES);
+	
+	FINAL += removeDups(railcon, final, NUM_REAL_PLACES, NUM_REAL_PLACES);
+	
+	*numReturnedLocs = FINAL;
+	
+	PlaceId *connections = malloc(FINAL * sizeof(connections)); 
+	
+	// COPY FINAL ARRAY INTO CONNECTIONS!
+*/
 	return connections;
 }
 
