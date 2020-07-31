@@ -22,8 +22,6 @@
 // add your own #includes here
 
 #define PLAY_LEN 8
-#define FALSE 0
-#define TRUE 1
 
 // TODO: ADD YOUR OWN STRUCTS HERE
 
@@ -53,7 +51,8 @@ PlaceId *playerLastMoves(GameView gv, Player player, int numMoves,
                          int *numReturnedMoves);
 void findDraculaLocation(int numMoves, PlaceId *draculaMoves);
 
-PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type);
+void nearby(Map m, PlaceId from, PlaceId *near, int *size, int type);
+int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2);
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
 
@@ -396,18 +395,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		
 		int addRoad = 1;
 		
-		PlaceId *insert = malloc(addRoad * sizeof(*insert));
+		PlaceId insert[NUM_REAL_PLACES];
 		
-		insert = nearby(europe, from, insert, &addRoad, ROAD);
-		
-		/*
-		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
-			if (curr->type == ROAD) {
-				insert[addRoad] = curr->p;
-				addRoad++;
-			}
-		}
-		*/
+		nearby(europe, from, insert, &addRoad, ROAD);
 		
 		for (int i = 1; i < addRoad; i++) {
 			if (player == PLAYER_DRACULA && insert[i] == ST_JOSEPH_AND_ST_MARY) {
@@ -421,15 +411,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	if (boat) {
 	
-		connections = nearby(europe, from, connections, numReturnedLocs, BOAT);
-		/*
-		for (curr = MapGetConnections(europe, from); curr != NULL; curr = curr->next) {
-			if (curr->type == BOAT) {
-				connections[*numReturnedLocs] = curr->p;
-				(*numReturnedLocs)++;
-			}
-		}
-		*/
+		nearby(europe, from, connections, numReturnedLocs, BOAT);
 	}
 	
 	// PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
@@ -439,115 +421,129 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		int travelRail = (player + round) % 4;
 		
 		int railStations = 0;
+		PlaceId connRail[NUM_REAL_PLACES];
 		
 		int nextStations = 0;
+		PlaceId connNext[NUM_REAL_PLACES];
 		
 		int secStations = 0;
+		PlaceId connSec[NUM_REAL_PLACES];
 		
-		int totalStations = 0;
+		int numStations = 0;
+		PlaceId noDups[numStations];
 		
-		PlaceId *connRail = malloc(railStations * sizeof(*connRail));
+		int numStationsSec = 0;
+		PlaceId noDupsSec[numStationsSec];
 		
-		PlaceId *connNext = malloc(nextStations * sizeof(*connNext));
+		// int numStationsThd = 0;
+		// PlaceId noDupsThd[numStationsThd];
 		
-		PlaceId *connSec = malloc(secStations * sizeof(*connSec));
-		
-		PlaceId *connTotal = malloc(totalStations *sizeof(*connTotal));
-		
-		connections[0] = from;
+		// int numRails = 0;
+		// PlaceId railConnections[numRails];
 		
 		if (travelRail == 0 || player == PLAYER_DRACULA) {
 			return connections;
 		}
 		
+		nearby(europe, from, connRail, &railStations, RAIL);
 		if (travelRail >= 1) {
-			connRail = nearby(europe, from, connRail, &railStations, RAIL);
 			for (int i = 0; i < railStations; i++) {
 				connections[*numReturnedLocs] = connRail[i];
 				(*numReturnedLocs)++;
 			}
-			
-			// debugging
-			printf("number of railStations: %d\n", railStations);
-			for (int i = 0; i < railStations; i++) {
-				printf("%s\n", placeIdToName(connRail[i]));
-			}
+		}
 		
-			printf("\n");
+		// int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size2);
 		
-			printf("number of connections: %d\n", *numReturnedLocs);
-			for (int i = 0; i < *numReturnedLocs; i++) {
-				printf("%s\n", placeIdToName(connections[i]));
+		for (int i = 0; i < railStations; i++) {
+			nearby(europe, connRail[i], connNext, &nextStations, RAIL);
+			for (int j = 0; j < nextStations; j++) {
+				numStations = removeDups(connNext, noDups, j, i);
 			}
-			printf("-------------------\n");
-			
 		}
 		
 		if (travelRail >= 2) {
-			for (int i = 0; i < railStations; i++) {
-				connNext = nearby(europe, connRail[i], connNext, &nextStations, RAIL);
-				for (int j = 0; j < nextStations; j++) {
-					if (connNext[j] != from && connNext[i] != connNext[j] 
-						 && connNext[j] != connRail[i]) {
-						connections[*numReturnedLocs] = connNext[j];
-						(*numReturnedLocs)++;
-						connTotal[totalStations] = connNext[j];
-						totalStations++;
-					}
+			for (int i = 0; i < numStations; i++) {
+				if (noDups[i] != from) {
+					connections[*numReturnedLocs] = noDups[i];
+					(*numReturnedLocs)++;
 				}
 			}
-			// debugging
-			printf("number of nextStations: %d\n", nextStations);
-			for (int i = 0; i < nextStations; i++) {
-				printf("%s\n", placeIdToName(connNext[i]));
-			}
-			printf("\n");
-		
-			// debugging
-			printf("number of totalStations: %d\n", totalStations);
-			for (int i = 0; i < totalStations; i++) {
-				printf("%s\n", placeIdToName(connTotal[i]));
-			}
-			printf("\n");
-		
-			printf("number of connections: %d\n", *numReturnedLocs);
-			for (int i = 0; i < *numReturnedLocs; i++) {
-				printf("%s\n", placeIdToName(connections[i]));
-			}
-			printf("-------------------\n");
 		}
 		
+		printf("---------------------Debugging------------------------\n");
+		printf("---------------------travel = 2------------------------\n");
+		printf("number of noDups: %d\n", numStations);
+		printf ("locations:\n");
+		for (int i = 0; i < numStations; i++) {
+			printf("%s\n", placeIdToName(noDups[i]));
+		}
 		
-		if (travelRail == 3) {
-			for (int i = 0; i < totalStations; i++) {
-				connSec = nearby(europe, connTotal[i], connSec, &secStations, RAIL);
-				for (int j = 0; j < secStations; j++) {
-					if (connSec[j] != from && connSec[i] != connSec[j]
-						 && connTotal[i] != connSec[j]) {
-						connections[*numReturnedLocs] = connSec[j];
-						(*numReturnedLocs)++;
+		for (int i = 0; i < nextStations; i++) {
+			nearby(europe, connNext[i], connSec, &secStations, RAIL);
+			for (int j = 0; j < secStations; j++) {
+			bool visited = false;
+				for (int k = 0; k < railStations; k++) {
+					if (connSec[j] == connRail[k]) {
+						visited = true;
 					}
 				}
+				if (!visited) {
+					noDupsSec[numStationsSec] = connSec[j];
+					numStationsSec++;
+				}
 			}
-			
-			// debugging
-			printf("number of secStations: %d\n", secStations);
-			for (int i = 0; i < secStations; i++) {
-				printf("%s\n", placeIdToName(connSec[i]));
-			}
-			printf("\n");
-		
-			printf("number of connections: %d\n", *numReturnedLocs);
-			for (int i = 0; i < *numReturnedLocs; i++) {
-				printf("%s\n", placeIdToName(connections[i]));
-			}
-			printf("-------------------\n");
 		}
 		
-		free(connRail);
-		free(connNext);
-		free(connSec);
-		free(connTotal);
+		/* if (travelRail == 3) {
+			for (int i = 0; i < numStationsSec; i++) {
+				bool visited = false;
+				for (int j= 0; j < railStations; j++) {
+					if (noDupsSec[i] == connRail[j]) {
+						visited = true;
+					}
+				}
+				for (int k = 0; k < nextStations; k++) {
+					if (noDupsSec[i] == connNext[k]) {
+						visited = true;
+					}
+				}
+				if (!visited) {
+					noDupsThd[numStationsThd] = noDupsSec[i];
+					numStationsThd++;
+				}
+			}
+		}
+		*/
+		
+		printf("---------------------travel = 3------------------------\n");
+		printf("number of noDups: %d\n", numStations);
+		printf ("locations:\n");
+		for (int i = 0; i < numStations; i++) {
+			printf("%s\n", placeIdToName(noDups[i]));
+		}
+		printf("\n");
+		printf("number of secStations: %d\n", secStations);
+		printf ("locations:\n");
+		for (int i = 0; i < secStations; i++) {
+			printf("%s\n", placeIdToName(connSec[i]));
+		}
+		printf("\n");
+		printf("number of noDupsSec: %d\n", numStationsSec);
+		printf ("locations:\n");
+		for (int i = 0; i < numStationsSec; i++) {
+			printf("%s\n", placeIdToName(noDupsSec[i]));
+		}
+		/*
+		printf("\n");
+		printf("number of noDupsThd: %d\n", numStationsThd);
+		printf ("locations:\n");
+		for (int i = 0; i < numStationsThd; i++) {
+			printf("%s\n", placeIdToName(noDupsThd[i]));
+		}
+		*/
+		printf("-------------------End of debugging---------------------\n");
+		
 	}
 	
 	return connections;
@@ -573,6 +569,7 @@ char *getLastMove(GameView gv, Player player)
    if (GvGetRound(gv) == 0 && GvGetPlayer(gv) <= player) {
       return NULL;
    }
+
 
 
    char *string = strdup(gv->pastPlays);
@@ -900,7 +897,7 @@ int updateDraculaHealth(GameView gv, char *move, int health)
 
 //------------------------ reachable helper functions --------------------------
 
-PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
+void nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
 {
 	ConnList curr;
 	
@@ -910,6 +907,23 @@ PlaceId *nearby(Map m, PlaceId from, PlaceId *near, int *size, int type)
 			(*size)++;
 		}
 	}
-	
-	return near;
+}
+
+int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2) {
+	int j = 0;
+   for (int i = 0; i < size; i++) {
+     bool inArray = false;
+     
+     for (int k = 0; k < size_2; k++) {
+         if (arrayDups[i] == arrayEmpty[k]) {
+             inArray = true;
+         }
+     }
+     
+     if (!inArray) {
+         arrayEmpty[j] = arrayDups[i];
+         j++;
+     }
+   }
+   return j;
 }
