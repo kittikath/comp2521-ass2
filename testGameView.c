@@ -182,7 +182,7 @@ int main(void)
 			"GST.... SST.... HST.... MST.... DD1.... "
 			"GFR.... SFR.... HFR.... MFR....";
 		
-		Message messages[] = {
+		Message messages[14] = {
 			"Hello", "Rubbish", "Stuff", "", "Mwahahah",
 			"Aha!", "", "", "", "Back I go"};
 		
@@ -210,7 +210,7 @@ int main(void)
 		Message messages[6] = {};
 		GameView gv = GvNew(trail, messages);
 	
-		assert(GvGetHealth(gv, GAME_START_HUNTER_LIFE_POINTS));
+		assert(GvGetHealth(gv, PLAYER_LORD_GODALMING) == GAME_START_HUNTER_LIFE_POINTS);
 		
 		GvFree(gv);
 		printf("Test passed!\n");
@@ -270,15 +270,27 @@ int main(void)
 			"GSZ.... SGE.... HGE.... MGE.... DGAT... "
 			"GSZ.... SGE.... HGE.... MGE....";
 		
-		Message messages[15] = {};
+		Message messages[19] = {};
 		GameView gv = GvNew(trail, messages);
 		
 		assert(GvGetPlayerLocation(gv, PLAYER_DRACULA) == GALATZ);
 		assert(GvGetVampireLocation(gv) == CASTLE_DRACULA);
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+		// debugging
+		printf("number of traps: %d\n", numTraps);
+		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
+		
+		// debugging
+		for (int i = 0; i < numTraps; i++) {
+			
+			printf("%s\n", placeIdToName(traps[i]));
+			
+		}
+		
 		assert(traps[0] == GALATZ && traps[1] == KLAUSENBURG);
 		free(traps);
 		
@@ -306,8 +318,20 @@ int main(void)
 		assert(GvGetVampireLocation(gv) == BUCHAREST);
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+		// Debugging
+		printf("number of traps: %d\n", numTraps);
+		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
+		
+		// debugging
+		for (int i = 0; i < numTraps; i++) {
+			
+			printf("%s\n", placeIdToName(traps[i]));
+			
+		}
+		
 		assert(traps[0] == CONSTANTA && traps[1] == GALATZ);
 		free(traps);
 		
@@ -426,14 +450,28 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, GALATZ, true, false,
 			                                     false, &numLocs);
-
+			
 			assert(numLocs == 5);
 			sortPlaces(locs, numLocs);
+			
 			assert(locs[0] == BUCHAREST);
 			assert(locs[1] == CASTLE_DRACULA);
 			assert(locs[2] == CONSTANTA);
 			assert(locs[3] == GALATZ);
 			assert(locs[4] == KLAUSENBURG);
+			free(locs);
+		}
+		
+		{
+			printf("\tChecking SZEGED road connections "
+			       "(Dracula, Round 1)\n");
+			int numLocs = -1;
+			PlaceId *locs = GvGetReachableByType(gv, PLAYER_DRACULA,
+			                                     1, SZEGED, true, false,
+			                                     false, &numLocs);
+			                                     
+			sortPlaces(locs, numLocs);
+			
 			free(locs);
 		}
 
@@ -447,6 +485,7 @@ int main(void)
 			                                     true, &numLocs);
 			
 			assert(numLocs == 7);
+			
 			sortPlaces(locs, numLocs);
 			assert(locs[0] == ADRIATIC_SEA);
 			assert(locs[1] == ATHENS);
@@ -455,6 +494,19 @@ int main(void)
 			assert(locs[4] == SALONICA);
 			assert(locs[5] == TYRRHENIAN_SEA);
 			assert(locs[6] == VALONA);
+			free(locs);
+		}
+		
+		{
+			printf("\tChecking Santander road & boat connections "
+			       "(Dracula, Round 1)\n");
+			int numLocs = -1;
+			PlaceId *locs = GvGetReachableByType(gv, PLAYER_DRACULA,
+			                                     1, SANTANDER, true, false,
+			                                     true, &numLocs);
+			
+			sortPlaces(locs, numLocs);
+			
 			free(locs);
 		}
 
@@ -468,6 +520,7 @@ int main(void)
 			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
+			
 			assert(locs[0] == BORDEAUX);
 			assert(locs[1] == BRUSSELS);
 			assert(locs[2] == COLOGNE);
@@ -475,6 +528,7 @@ int main(void)
 			assert(locs[4] == MARSEILLES);
 			assert(locs[5] == PARIS);
 			assert(locs[6] == SARAGOSSA);
+			
 			free(locs);
 		}
 		
@@ -492,6 +546,32 @@ int main(void)
 
 		GvFree(gv);
 		printf("Test passed!\n");
+	}
+	
+   {///////////////////////////////////////////////////////////////////
+	   
+	   printf("Test for Dracula's valid moves 2\n");
+	
+			char *trail =
+			"GED.... SGE.... HZU.... MCA.... DCF.V.. "
+			"GMN.... SCFVD.. HGE.... MLS.... DBOT... "
+			"GLO.... SMR.... HCF.... MMA.... DTOT... "
+			"GPL.... SMS.... HMR.... MGR.... DBAT... "
+			"GLO.... SBATD.. HMS.... MMA.... DSRT... "
+			"GPL.... SSJ.... HBA.... MGR.... DALT... "
+			"GPL.... SSJ.... HBA.... MGR.... DMAT... "
+			"GLO.... SBE.... HMS.... MMATD.. ";
+		
+		Message messages[39] = {};
+		GameView gv = GvNew(trail, messages);
+	   
+	   int numReturnedLocs = - 1;
+	   PlaceId *Reach = GvGetReachable(gv, PLAYER_DRACULA, GvGetRound(gv),
+                        GvGetPlayerLocation(gv, PLAYER_DRACULA), &numReturnedLocs);
+	
+	
+	   assert(Reach != NULL);
+	
 	}
 
 	return EXIT_SUCCESS;
