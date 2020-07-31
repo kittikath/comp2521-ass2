@@ -296,16 +296,6 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	   }
 	}
 	
-	printf("--------------number of laid traps: %d--------------\n", numLaid);
-	for (int i = 0; i < numLaid; i++) {
-		printf("%s\n", placeIdToName(laidLocs[i]));
-	}
-	
-	printf("--------------number of destroyed traps: %d--------------\n", numDestroyed);
-	for (int i = 0; i < numDestroyed; i++) {
-		printf("%s\n", placeIdToName(removedLocs[i]));
-	}
-	
 	*numTraps = numLaid - numDestroyed;
 	
 	PlaceId *trapLocs = malloc((*numTraps) * sizeof(*trapLocs));
@@ -322,11 +312,6 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 			trapLocs[j] = laidLocs[i];
 			j++;
 		}
-	}
-	
-	printf("--------------number of remaining traps: %d--------------\n", *numTraps);
-	for (int i = 0; i < *numTraps; i++) {
-		printf("%s\n", placeIdToName(trapLocs[i]));
 	}
 	
 	return trapLocs;
@@ -454,8 +439,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	
 	if (rail && travelRail > 0 && player != PLAYER_DRACULA) {
 		
-		printf("Allowed travel distance: %d\n", travelRail);
-		
 		int firstStations = 0;
 		PlaceId connFirst[NUM_REAL_PLACES];
 		
@@ -488,11 +471,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			}
 		}
 		
-		printf("---------number of rail connections 1: %d---------\n", numRoads);
-		for (int i = 0; i < numRails; i++) {
-			printf("%s\n", placeIdToName(connRail[i]));
-		}
-		
 		// Get second set of rail connections
 		for (int i = 0; i < firstStations; i++) {
 			nearby(europe, connFirst[i], connSec, &secStations, RAIL);
@@ -509,11 +487,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			}
 		}
 		
-		printf("---------number of rail connections 1: %d---------\n", numRoads);
-		for (int i = 0; i < numRails; i++) {
-			printf("%s\n", placeIdToName(connRail[i]));
-		}
-		
 		// Get third set of rail connections
 		for (int i = 0; i < secStations; i++) {
 			nearby(europe, connSec[i], connThird, &thirdStations, RAIL);			
@@ -528,10 +501,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				connRail[numRails] = noDupsSec[i];
 				numRails++;
 			}
-		}
-		printf("---------number of rail connections 3: %d---------\n", numRoads);
-		for (int i = 0; i < numRails; i++) {
-			printf("%s\n", placeIdToName(connRail[i]));
 		}
 		
 		connRail[numRails] = from;
@@ -563,19 +532,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		totalDups++;
 	}
 	
-	printf("---------number of road connections: %d---------\n", numRoads);
-	for (int i = 0; i < numRoads; i++) {
-		printf("%s\n", placeIdToName(connRoad[i]));
-	}
-	
 	for (int i = 0; i < numBoats; i++) {
 		connTotalDups[totalDups] = connBoat[i];
 		totalDups++;
-	}
-	
-	printf("---------number of boat connections: %d---------\n", numBoats);
-	for (int i = 0; i < numBoats; i++) {
-		printf("%s\n", placeIdToName(connBoat[i]));
 	}
 	
 	for (int i = 0; i < numRails; i++) {
@@ -583,20 +542,8 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		totalDups++;
 	}
 	
-	printf("---------number of rail connections: %d---------\n", numRails);
-	for (int i = 0; i < numRails; i++) {
-		printf("%s\n", placeIdToName(connRail[i]));
-	}
-	
-	printf("---------number of connTotalDups: %d---------\n", totalDups);
-	for (int i = 0; i < totalDups; i++) {
-		printf("%s\n", placeIdToName(connTotalDups[i]));
-	}
-	
 	numTotal = removeDups(connTotalDups, connTotal, NUM_REAL_PLACES, 
 	                      NUM_REAL_PLACES);
-	
-	printf("----------value of numTotal: %d---------------\n", numTotal);
 	
 	*numReturnedLocs = numTotal;
 	

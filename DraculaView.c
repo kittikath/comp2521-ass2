@@ -388,9 +388,6 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
      validLocations[j] = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
      j++;
    }
-
-   printf("numValidLocations: %d\n", numValidLocations);
-
    // free memory
    free(trailMoves);
    free(trailLocations);
