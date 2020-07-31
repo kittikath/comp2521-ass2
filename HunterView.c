@@ -34,7 +34,6 @@ typedef struct QueueRep {
 
 struct hunterView {
 	GameView gameView;
-	DraculaView dracView;
 	char *pastPlays;
 	int pred[NUM_REAL_PLACES];
 	PlaceId railDest[NUM_REAL_PLACES][NUM_REAL_PLACES];
