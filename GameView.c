@@ -432,10 +432,10 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		PlaceId connSec[NUM_REAL_PLACES];
 		
 		int numStations = 0;
-		PlaceId noDups[numStations];
+		PlaceId noDups[NUM_REAL_PLACES];
 		
 		int numStationsSec = 0;
-		PlaceId noDupsSec[numStationsSec];
+		PlaceId noDupsSec[NUM_REAL_PLACES];
 		
 		// Outputs
 		// int numRails = 0;
@@ -457,10 +457,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		
 		for (int i = 0; i < railStations; i++) {
 			nearby(europe, connRail[i], connNext, &nextStations, RAIL);
-			for (int j = 0; j < nextStations; j++) {
-				numStations = removeDups(connNext, noDups, j, NUM_REAL_PLACES);
-			}
 		}
+		
+		numStations = removeDups(connNext, noDups, NUM_REAL_PLACES, NUM_REAL_PLACES);
 		
 		if (travelRail >= 2) {
 			for (int i = 0; i < numStations; i++) {
@@ -470,22 +469,22 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				}
 			}
 		}
-		
+/*			
 		printf("---------------------Debugging------------------------\n");
 		printf("---------------------travel = 2------------------------\n");
 		printf("number of noDups: %d\n", numStations);
 		printf ("locations:\n");
+*/
 		for (int i = 0; i < numStations; i++) {
 			printf("%s\n", placeIdToName(noDups[i]));
 		}
 		
 		// Remove duplicates of locations of 3rd stations
 		for (int i = 0; i < nextStations; i++) {
-			nearby(europe, connNext[i], connSec, &secStations, RAIL);
-			for (int j = 0; j < secStations; j++) {
-				numStationsSec = removeDups(connSec, noDupsSec, j, NUM_REAL_PLACES);
-			}
+			nearby(europe, connNext[i], connSec, &secStations, RAIL);			
 		}
+		
+		numStationsSec = removeDups(connSec, noDupsSec, NUM_REAL_PLACES, NUM_REAL_PLACES);
 		
 		if (travelRail == 3) {
 			for (int i = 0; i < numStationsSec; i++) {
@@ -506,7 +505,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				}
 			}
 		}
-		
+/*		
 		printf("---------------------travel = 3------------------------\n");
 		printf("number of noDups: %d\n", numStations);
 		printf ("locations:\n");
@@ -526,7 +525,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(noDupsSec[i]));
 		}
 		printf("-------------------End of debugging---------------------\n");
-		
+*/		
 	}
 	
 	return connections;
@@ -903,7 +902,7 @@ int removeDups(PlaceId *arrayDups, PlaceId *arrayEmpty, int size, int size_2) {
          }
      }
      
-     if (!inArray) {
+     if (!inArray && placeIsReal(arrayDups[i])) {
          arrayEmpty[j] = arrayDups[i];
          j++;
      }
