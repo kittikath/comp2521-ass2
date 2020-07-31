@@ -23,19 +23,20 @@
 // add your own #includes here
 // TODO: ADD YOUR OWN STRUCTS HERE
 
+typedef struct QueueRep {
+	ConnList head;  // ptr to first node
+	ConnList tail;  // ptr to last node
+} QueueRep, *Queue; 
+
 struct hunterView {
 	GameView gameView;
 	char *pastPlays;
 	int pred[NUM_REAL_PLACES];
+	PlaceId railDest[NUM_REAL_PLACES][NUM_REAL_PLACES];
+	QueueRep railPath[NUM_REAL_PLACES];
 	Message *messages;
 	
 };
-
-typedef struct QueueRep {
-	ConnList head;  // ptr to first node
-	ConnList tail;  // ptr to last node
-} QueueRep, *Queue;
-
 
 // queue functions
 Queue newQueue(); // create new empty queue
@@ -44,7 +45,15 @@ void showQueue(Queue); // display as 3 > 5 > 4 > ...
 void QueueJoin(Queue, ConnList); // add item on queue
 PlaceId QueueLeave(Queue); // remove item from queue
 int QueueIsEmpty(Queue); // check for no items
+ConnList QueueLast(Queue Q);
+ConnList createNode(PlaceId place, TransportType transport);
+int countNodes(Queue Q);
+bool QueueContains(Queue Q, ConnList node);
+// int findSteps(int length);
 
+//shortest path
+void newPath(HunterView hv, int totalPath, int pathcur, PlaceId place, TransportType transport);
+int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId dest, Player player);
 
 // helper functions 
 char *getLastMove(GameView gv, Player player);
@@ -81,7 +90,12 @@ HunterView HvNew(char *pastPlays, Message messages[])
 	new->messages = messages;
 	for(int i = 0; i < NUM_REAL_PLACES; i++){
 		new->pred[i] = -1;
+		new->railPath[i].head = NULL;
+		for(int j = 0; j < NUM_REAL_PLACES; j++){
+			new->railDest[i][j] = -1;
+		}
 	}
+
 	new->gameView = GvNew(pastPlays, messages);
 
 	return new;
@@ -170,43 +184,62 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	TransportType Tsrc = placeIdToType(src);
 	ConnList srcNode = malloc(sizeof(ConnList)); 
 	srcNode->p = src;
-	printf("first location %s last location is %s %s\n", placeIdToName(srcNode->p), placeIdToName(dest), transportTypeToString(Tsrc));
 	srcNode->type = Tsrc;
 	srcNode->next = NULL;
 	Queue Q = newQueue();
 	ConnList curr;
 	PlaceId currPlace;
-	int railMoves = 0;
-	int moveFlag = 0;
+	int movesByRail = 0;
+	int railMoves = (hunter+HvGetRound(hv))%4;
 	int isFound = 0;
+	int maxSteps = 3;
+	int c = 0;
 	QueueJoin(Q, srcNode);
 	while(!QueueIsEmpty(Q) && !isFound){
 		currPlace = QueueLeave(Q);
-		//QueueLeave function not printing correct
-		printf("first location %s\n", placeIdToName(currPlace));
+		// printf("pushed is %s!!\n", placeIdToName(currPlace));
 		//check for connections of node
 		for(curr =  MapGetConnections(m, currPlace); curr != NULL; curr = curr->next){
 			//we found a connection :O
-			printf("curr %s transport %s\n", placeIdToName(curr->p), transportTypeToString(curr->type));
+			// printf("curr %s transport %s\n", placeIdToName(curr->p), transportTypeToString(curr->type));
 			if(hv->pred[curr->p] == -1){
-				if(curr->type == RAIL && railMoves != 0){
-					railMoves--;
+				if(curr->type == RAIL && railMoves != 0 ){
+					hv->pred[curr->p] = currPlace;
+					printf("%d %d, %s...\n", hv->pred[curr->p], curr->p, placeIdToName(hv->pred[curr->p]));
+					movesByRail = travelByRail(hv, m, curr->p, src, dest, railMoves);
+					railMoves = 0;
+					for(c = 0; c <= movesByRail; c++){
+						PlaceId placeB4 = hv->railDest[c][0];
+						for(int steps = 1; steps <= maxSteps; steps++){
+							if(hv->pred[hv->railDest[c][steps]] < 0){
+								hv->pred[hv->railDest[c][steps]] = placeB4;
+								srcNode = createNode(hv->railDest[c][steps], RAIL);
+								if(!QueueContains(Q, srcNode)){
+									QueueJoin(Q, srcNode);
+								}
+							}
+							// if(hv->railDest[c][steps] == dest){
+							// 	printf("--------------------------\n");
+							// 	isFound = 1;
+							// 	break;
+							// }
+							// showQueue(Q);
+						}
+					}
 				}
-				else if(curr->type == RAIL && !moveFlag){
-					moveFlag = 1;
-					railMoves = (hunter+HvGetRound(hv))%4;
+				else{
+					hv->pred[curr->p] = currPlace;
+					QueueJoin(Q, curr);
 				}
-				hv->pred[curr->p] = currPlace;
-				QueueJoin(Q, curr);
 			}
-			if(curr->p == dest){ 
-				printf("--------------------------\n");
-				isFound = 1; 
-				break; 
-			}
+			// if(curr->p == dest){ 
+			// printf("~~~~~~~~~\n");
+			// 	isFound = 1; 
+			// 	break; 
+			// }
 			//check if theres another route other than rail,
 			//if there is switch the queue node for that one.
-			showQueue(Q);
+			// showQueue(Q);
 			// m->connection[curr->p] != 0){
 		}
 	}
@@ -216,7 +249,6 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 		return NULL;
 	}
 	else{
-		printf("ok\n");
 		for(int v = dest; v != src; v = hv->pred[v]){
 			printf("%d %s<-", v, placeIdToName(v));
 			pathLength[0]++;
@@ -224,10 +256,31 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 		printf("%d\n", src);
 	}
 	printf("pathlength %d\n",pathLength[0]);
+	//from my lab 7 submission
+	int k = 0;
+	int backtrack = dest;
+	int backpath[NUM_REAL_PLACES];
+	backpath[0] = dest;
+	k++;
+	while(backtrack != src){
+		backpath[k] = hv->pred[backtrack];
+		backtrack = hv->pred[backtrack];
+		k++;
+	}
+	backpath[k] = src;
 
-	return NULL;
+	int hops = k;
+	int counter = hops-1;
+	PlaceId *path =  malloc(pathLength[0]*sizeof(*path));
+	for(int x = 0; x < hops-1; x++){
+		path[x] = backpath[counter-1];
+		printf("%s ->", placeIdToName(path[x]));
+		counter--;
+	}
+	printf("\n");
+	free(srcNode);
+	return path;
 }
-
 ////////////////////////////////////////////////////////////////////////
 // Making a Move
 
@@ -289,10 +342,178 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 	//return GvGetReachableByType(hv->gameView, player, round, from, road, rail, boat, numReturnedLocs);
 }
 
+PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
+                          int *numReturnedLocs)
+{
+	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	int round = HvGetRound(hv);
+	int from = GvGetPlayerLocation(hv->gameView, player);
+	*numReturnedLocs = 0;
+	return GvGetReachableByType(hv->gameView, player, round, from, true, true, true, numReturnedLocs);
+}
+
+PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
+                                bool road, bool rail, bool boat,
+                                int *numReturnedLocs)
+{
+	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	int round = HvGetRound(hv);
+	int from = GvGetPlayerLocation(hv->gameView, player);
+	bool railCheck = checkRail(hv, player, rail);
+	*numReturnedLocs = 0;
+	PlaceId *hello = GvGetReachableByType(hv->gameView, player, round, from, road, railCheck, boat, numReturnedLocs);
+	return hello;
+	//return GvGetReachableByType(hv->gameView, player, round, from, road, rail, boat, numReturnedLocs);
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
 // TODO
+bool checkRail(HunterView hv, Player player, bool rail)
+{
+	int round = HvGetRound(hv);
+	if(rail && (player+round)%4 == 0){
+		printf("changed to false\n");
+		rail = false;
+
+	}
+	return rail;
+}
+
+int travelByRail(HunterView hv, Map m, PlaceId startLoc, PlaceId src, PlaceId dest, Player player){
+	PlaceId currLoc;
+	int round = HvGetRound(hv);
+	int moves = (round+player)%4;
+	int length = 0;
+	//calculate moves per round
+	int predCopy[NUM_REAL_PLACES];
+	int movesPerRound[NUM_REAL_PLACES] = {0};
+	movesPerRound[length] = moves;
+	length++;
+	for(int i = length; i < NUM_REAL_PLACES ; i++){
+		switch((moves+length)%7){
+			case 1:
+				movesPerRound[i] = 1;
+				break;
+			case 2:
+				movesPerRound[i] = 2;
+				break;
+			case 3:
+				movesPerRound[i] = 1;
+				break;
+			case 4:
+				movesPerRound[i] = 3;
+				break;
+			case 5:
+				movesPerRound[i] = 2;
+				break;
+			case 6:
+				movesPerRound[i] = 1;
+				break;
+			case 0:
+				movesPerRound[i] = 0;
+				break;
+		}
+	}
+
+	int pathcur = 0;
+	int totalpath = 0;
+	int railConnections = 0;
+	int counter;
+	
+	for(int p = 0; p < NUM_REAL_PLACES; p++){
+		predCopy[p] = hv->pred[p];
+	}
+	//set src location to -2 so it doesn't return 
+	predCopy[src] = -2; 
+	
+	for(int i = 0; i < NUM_REAL_PLACES; i++){
+		hv->railDest[i][0] = startLoc; 
+	}
+
+	ConnList node = createNode(startLoc, RAIL);
+	QueueJoin(&(hv->railPath[pathcur]), node);
+	ConnList curr = hv->railPath[pathcur].head;
+	// movesPerRound[round] = moves;
+	while(pathcur <= totalpath){
+		currLoc = hv->railPath[pathcur].tail->p;
+		moves = (round+player)%4;
+		// movesPerRound[round] = moves;
+		printf("start %s moves this round %d\n", placeIdToName(currLoc), moves);
+		counter = moves;
+		while(counter != 0){
+			//find rail connections
+			railConnections = 0;
+			printf("---- %d round %d move ----\n", moves, counter);
+			for (curr = MapGetConnections(m, currLoc); curr != NULL; curr = curr->next){
+				printf("pred %d %d  %s\n", curr->p, predCopy[curr->p], placeIdToName(curr->p));
+				if(curr->type == RAIL && predCopy[curr->p] == -1){
+					//save onto current list
+					if(railConnections == 0){
+						//add to list
+						printf("%s added edge  ", placeIdToName(curr->p));
+						QueueJoin(&(hv->railPath[pathcur]), curr);
+					}
+					else{ //create copy of current list
+						totalpath++;
+						printf("%d %s total path\n", totalpath, placeIdToName(curr->p));
+						newPath(hv, totalpath, pathcur, curr->p, curr->type);
+					}
+					//tagged that this has been visited by rail
+					// printf("pred values %d\n", predCopy[curr->p]);
+					predCopy[curr->p] = currLoc;
+					railConnections++;
+				}
+				printf("\n");
+			}
+			if(currLoc == hv->railPath[pathcur].tail->p && currLoc < totalpath){
+				pathcur++;
+			}
+			currLoc = hv->railPath[pathcur].tail->p;
+			counter--;
+		}
+		if(moves > 0 && railConnections != 0){
+			for(int i = 0; i < totalpath+1; i++){
+				hv->railDest[i][round] = hv->railPath[i].tail->p; 
+				printf("values saved %d %d %s \n", i, round, placeIdToName(hv->railDest[i][round]));
+
+			}
+		}
+		// round++;
+		pathcur++;
+		moves = movesPerRound[countNodes(&(hv->railPath[pathcur]))];
+		// printf("-------------------- %d ROUND--------\n", round);
+		
+	}
+
+	return totalpath;
+}
+
+void newPath(HunterView hv, int totalPath, int pathcur, PlaceId place, TransportType transport){
+	ConnList it = hv->railPath[pathcur].head;
+	hv->railPath[totalPath].head = createNode(it->p, it->type);
+	hv->railPath[totalPath].tail = hv->railPath[totalPath].head;
+	// printf("%s last value \n", placeIdToName(hv->railPath[totalPath].tail->p));
+	it = it->next;
+	while(it->next != NULL){
+		QueueJoin(&(hv->railPath[totalPath]), it);
+		it = it->next;
+	}
+
+	ConnList new = createNode(place, transport);
+	hv->railPath[totalPath].tail->next = new;
+	hv->railPath[totalPath].tail = new;
+}
+
+ConnList createNode(PlaceId place, TransportType transport)
+{
+	ConnList node = malloc(sizeof(ConnList)); 
+	node->p = place;
+	node->type = transport;
+	node->next = NULL;
+	return node;
+}
 
 // create new empty Queue
 Queue newQueue()
@@ -353,6 +574,7 @@ void QueueJoin(Queue Q, ConnList node)
 	if (Q->tail != NULL)
 		Q->tail->next = new;
 	Q->tail = new;
+	// printf("Queueue Join function last value %s\n", placeIdToName(Q->tail->p));
 }
 
 // remove item from front of Queue
@@ -375,14 +597,66 @@ int QueueIsEmpty(Queue Q)
 	return (Q->head == NULL);
 }
 
-bool checkRail(HunterView hv, Player player, bool rail)
-{
-	int round = HvGetRound(hv);
-	if(rail && (player+round)%4 == 0){
-		printf("changed to false\n");
-		rail = false;
-		printf("%d bool\n", rail);
-
+ConnList QueueLast(Queue Q){
+	assert(Q != NULL);
+	ConnList curr = Q->head;
+	while(curr != NULL){
+		curr = curr->next;
 	}
-	return rail;
+	return curr;
 }
+
+
+int countNodes(Queue Q){
+	int count = 0;
+	ConnList curr = Q->head;
+	printf("counting nodes");
+	while(curr != NULL){
+		printf("%s + ",placeIdToName(curr->p));
+		curr = curr->next;
+		count++;
+	}
+	printf("\n");
+	return count;
+}
+
+bool QueueContains(Queue Q, ConnList node){
+	ConnList curr = Q->head;
+	while(curr != NULL){
+		if(curr->p == node->p){
+			return true;
+		}
+		curr = curr->next;
+	}
+	return false;
+}
+
+// int findSteps(int position){
+// 	int round = hvGetRound(hv);
+// 	int player = hvGetPlayer(hv);
+// 	int next = 0;
+// 	switch((position-round+1)%7){
+// 			case 1:
+// 				next = 1;
+// 				break;
+// 			case 2:
+// 				next = 2;
+// 				break;
+// 			case 3:
+// 				next = 1;
+// 				break;
+// 			case 4:
+// 				next = 3;
+// 				break;
+// 			case 5:
+// 				next = 2;
+// 				break;
+// 			case 6:
+// 				next = 1;
+// 				break;
+// 			case 0:
+// 				next = 0;
+// 				break;
+// 	}
+// 	return next;
+// }
