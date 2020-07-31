@@ -29,6 +29,7 @@
 PlaceId *playerLastMoves(GameView gv, Player player, int numMoves, 
                         int *numReturnedMoves);
 char *getPlayerMove(char *pastPlays, Player player, Round round);
+int numTrailLocations(int numTrail, PlaceId *trail);
 
 struct draculaView {
 	// TODO: ADD FIELDS HERE
@@ -107,12 +108,10 @@ PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 
 PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	// TODO: DONE!
     
-//////////////////////////////////////////////////////////////
 
-	int round = DvGetRound(dv);
-	if (round == 0 && GvGetPlayer(dv->gameView) <= PLAYER_DRACULA) {
+	if (DvGetPlayerLocation(dv, PLAYER_DRACULA) == NOWHERE) {
         *numReturnedMoves = 0;
         return NULL;
     }
@@ -123,167 +122,283 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     
     bool canFreeLocations = TRUE;
     int numLocations = 0;
-    PlaceId *trailLocations = GvGetLastLocations(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numLocations, &canFreeLocations);
+    PlaceId *trailLocations = GvGetLastLocations(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numLocations, 
+                                                 &canFreeLocations);
     
     int numReachables = 0;    
-    PlaceId *reachables = GvGetReachable(dv->gameView, PLAYER_DRACULA, DvGetRound(dv), DvGetPlayerLocation(dv, PLAYER_DRACULA), &numReachables);
+    PlaceId *reachables = GvGetReachable(dv->gameView, PLAYER_DRACULA, DvGetRound(dv), DvGetPlayerLocation(dv, 
+                                         PLAYER_DRACULA), &numReachables);
 
     // looking through trail moves, finding DOUBLE_BACK and HIDE moves
     bool hide = false;
+    
     bool doubleBack = false;
 
     for (int i = 0; i < numMoves; i++) {
         switch (trailMoves[i]) {
             case HIDE:
-                hide = true;
-                break;
+               hide = true;
+               break;
              case DOUBLE_BACK_1:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_2:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_3:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_4:
-                doubleBack = true;
-                break;
+               doubleBack = true;
+               break;
              case DOUBLE_BACK_5:
-                doubleBack = true;
-                break;
-			default:
-				continue;
+               doubleBack = true;
+               break;
+			   default:
+					continue;
         }
     }
     
-    // building a valid moves array
-    
-    int numValidMoves = numReachables;
-    
-    // if he has already hidden, one less move
-    if (hide) {
-        numValidMoves -= 1;
-    }
-    
-    // if he has already double backed, 5 less valid moves
-    if (doubleBack) {
-        numValidMoves -= 5;
-    }
-    
-    if (numValidMoves == 0) {
-        *numReturnedMoves = 0;
-        return NULL;   
-    }
-        
-    PlaceId *validMoves = malloc(numValidMoves * sizeof(*validMoves));
-    // populating valid moves array
-    
-    // adding reachable locations, except for those that are already in the trail
-    int j = 0;
-    for (int i = 0; i < numReachables; i++) {
-        bool inTrail = false;
-        // checks if the location is in the trail
-        for (int k = 0; k < numLocations; k++) {
-            if (reachables[i] == trailLocations[k]) {
-                inTrail = true;
+    // if no double backs are present in the trail
+    // build array to store valid double back locations
+    int numValidDoubleBackLocations = 0;
+    PlaceId doubleBackLocs[numLocations];
+    if (!doubleBack) {      
+      for (int i = 0; i < numLocations; i++) {
+         bool isReachable = false;
+         for (int k = 0; k < numReachables; k++) {
+            // check if double back is reachable
+            if (trailLocations[i] == reachables[k]) {
+               isReachable = true;
             }
-        }
-        // adds into validMoves if not in trail
-        if (!inTrail) {
-            validMoves[j] = reachables[i];
-            j++;
-        }
-    }
+         }
+         // add location
+         if (isReachable) {
+            doubleBackLocs[i] = trailLocations[i];
+            numValidDoubleBackLocations++;
+         } else {
+            doubleBackLocs[i] = NOWHERE;
+         }
+      }
+   }
+   
+   // building a valid moves array
+   
+   // number of moves outside the trail
+   int numValidMoves = numReachables - numTrailLocations(numMoves, trailMoves);
+   
+   // add hide move if none in trail   
+   if (!hide) {
+      numValidMoves += 1;
+   }
+   
+   // add back number of valid double backs
+   numValidMoves += numValidDoubleBackLocations;
     
-    // add hide move if none present in trail
-    if (!hide) {
-        validMoves[j] = HIDE;
-        j++;
-    }
+   if (numValidMoves == 0) {
+     free(trailMoves);
+     free(trailLocations);
+     free(reachables);
+     *numReturnedMoves = 0;
+     return NULL;   
+   }
+        
+   PlaceId *validMoves = malloc(numValidMoves * sizeof(*validMoves));
+   // populating valid moves array
     
-    // add double backs if none present in trail
-    if (!doubleBack) {
-        for (int i = DOUBLE_BACK_1; i <= DOUBLE_BACK_5; i++) {
-            validMoves[j] = i;
-            j++;
-        }
-    }
-    
-    free(trailMoves);
-    free(trailLocations);
-    free(reachables);
-    
-    *numReturnedMoves = numValidMoves + 1;
-    return validMoves; 
+   // adding reachable locations, except for those that are already in the trail
+   int j = 0;
+   for (int i = 0; i < numReachables; i++) {
+     bool inTrail = false;
+     // checks if the location is in the trail
+     for (int k = 0; k < numLocations; k++) {
+         if (reachables[i] == trailLocations[k]) {
+             inTrail = true;
+         }
+     }
+     // adds into validMoves if not in trail
+     if (!inTrail) {
+         validMoves[j] = reachables[i];
+         j++;
+     }
+   }
 
+   // add hide move if none present in trail
+   if (!hide) {
+      validMoves[j] = HIDE;
+      j++;
+   }
+
+   // add double backs if none present in trail
+   if (!doubleBack) {
+      for (int i = 0; i < numLocations; i++) {
+         if (doubleBackLocs[i] != NOWHERE) {
+            validMoves[j] = DOUBLE_BACK_1 + i;
+            j++;
+         }
+      }
+   }
+   
+   free(trailMoves);
+   free(trailLocations);
+   free(reachables);
+
+   *numReturnedMoves = numValidMoves;
+   return validMoves;
 }
 
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 {
-	// TODO: Have not tested
-	int round = DvGetRound(dv);
-	PlaceId curLoc = DvGetPlayerLocation(dv, PLAYER_DRACULA);
-	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+   // TODO:
 
-	int numLocs = 0;
-	PlaceId *locs = GvGetReachable(dv->gameView, PLAYER_DRACULA, round, curLoc, &numLocs);
-	printf("hi\n");
+   *numReturnedLocs = 0;
+   if (DvGetPlayerLocation(dv, PLAYER_DRACULA) == NOWHERE) {
+      return NULL;
+   }
 
-	PlaceId *moveArray = malloc(numLocs * sizeof(*moveArray));
-
-	// if dracula has not made a move this round yet, return null
-	if (curMove == NULL) {
-		*numReturnedLocs = 0;
-		return NULL;
-	}
-	// dracula has made a move
-	else {
-		// if there are no locations to go to
-		if (numLocs == 0) {
-			// teleport to castle dracula
-			*numReturnedLocs = 1;
-			moveArray[0] = TELEPORT;
-		}
-		else {
-			for (int i = 0; i < numLocs; i++) {
-				moveArray[i] = locs[i];
-			}
-			*numReturnedLocs = numLocs;
-		}
-		return moveArray;
-	}
+	int returnedlocs = *numReturnedLocs;
+	PlaceId *reachables = DvWhereCanIGoByType(dv, true, true, &returnedlocs);
+	*numReturnedLocs = returnedlocs;
+	return reachables;
 }
 
 PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
-	// TODO: Have not tested
-	int round = DvGetRound(dv);
-	PlaceId curLoc = DvGetPlayerLocation(dv, PLAYER_DRACULA);
-	char *curMove = getPlayerMove(dv->pastPlays, PLAYER_DRACULA, round);
+	// TODO:
 
-	int numLocs = -1;
-	// dracula cannot use rail
-	PlaceId *locs = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, round, curLoc, true, false, true, &numLocs);
+   if (DvGetPlayerLocation(dv, PLAYER_DRACULA) == NOWHERE) {
+      *numReturnedLocs = 0;
+      return NULL;
+   }
+    
+   bool canFreeMoves = TRUE;
+   int numMoves = 0;
+   PlaceId *trailMoves = GvGetLastMoves(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numMoves, &canFreeMoves);
 
-	// if dracula has not made a move this round yet, return null
-	if (curMove == NULL) {
-		*numReturnedLocs = 0;
-		return NULL;
-	}
-	// dracula has made a move
-	else {
-		// if there are no locations to go to
-		if (numLocs == 0) {
-			// teleport to castle dracula
-			*numReturnedLocs = 1;
-		}
-		else {
-			*numReturnedLocs = numLocs;
-		}
-		return locs;
-	}
+   bool canFreeLocations = TRUE;
+   int numLocations = 0;
+   PlaceId *trailLocations = GvGetLastLocations(dv->gameView, PLAYER_DRACULA, TRAIL_SIZE, &numLocations, &canFreeLocations);
+
+   int numReachables = 0;    
+   PlaceId *reachables = GvGetReachableByType(dv->gameView, PLAYER_DRACULA, DvGetRound(dv), DvGetPlayerLocation(dv, 
+   											PLAYER_DRACULA), road, false, boat, &numReachables);
+
+   // looking through trail moves, finding DOUBLE_BACK and HIDE moves
+   bool hide = false;
+   bool doubleBack = false;
+
+   for (int i = 0; i < numMoves; i++) {
+      switch (trailMoves[i]) {
+         case HIDE:
+             hide = true;
+             break;
+          case DOUBLE_BACK_1:
+             doubleBack = true;
+             break;
+          case DOUBLE_BACK_2:
+             doubleBack = true;
+             break;
+          case DOUBLE_BACK_3:
+             doubleBack = true;
+             break;
+          case DOUBLE_BACK_4:
+             doubleBack = true;
+             break;
+          case DOUBLE_BACK_5:
+             doubleBack = true;
+             break;
+         default:
+            continue;
+     }
+   }
+    
+   // if no double backs are present in the trail
+   // build array to store valid double back locations
+   int numValidDoubleBackLocations = 0;
+   PlaceId doubleBackLocs[numLocations];
+   if (!doubleBack) {      
+   for (int i = 0; i < numLocations; i++) {
+      bool isReachable = false;
+      for (int k = 0; k < numReachables; k++) {
+         // check if double back is reachable
+         if (trailLocations[i] == reachables[k]) {
+            isReachable = true;
+         }
+      }
+      // add location
+         if (isReachable) {
+            doubleBackLocs[i] = trailLocations[i];
+            numValidDoubleBackLocations++;
+         } else {
+            doubleBackLocs[i] = NOWHERE;
+         }
+      }
+   }
+   
+   // number of moves outside the trail
+   int numValidLocations = numReachables - numTrailLocations(numMoves, trailMoves);
+
+   // add back number of valid double backs
+   numValidLocations += numValidDoubleBackLocations;
+    
+   // add hide location not covered by double back
+   if (!hide && doubleBack) {
+      numValidLocations += 1;
+   }    
+    
+   if (numValidLocations == 0) {
+     free(trailMoves);
+     free(trailLocations);
+     free(reachables);
+     *numReturnedLocs = 0;
+     return NULL;   
+   }
+        
+   PlaceId *validLocations = malloc(numValidLocations * sizeof(*validLocations));
+   // populating valid moves array
+
+   // adding reachable locations, except for those that are already in the trail
+   int j = 0;
+   for (int i = 0; i < numReachables; i++) {
+     bool inTrail = false;
+     // checks if the location is in the trail
+     for (int k = 0; k < numLocations; k++) {
+         if (reachables[i] == trailLocations[k]) {
+             inTrail = true;
+         }
+     }
+     // adds into validMoves if not in trail
+     if (!inTrail) {
+         validLocations[j] = reachables[i];
+         j++;
+     }
+   }
+    
+   // add double backs if none present in trail
+   if (!doubleBack) {
+      for (int i = 0; i < numLocations; i++) {
+         if (doubleBackLocs[i] != NOWHERE) {
+            validLocations[j] = doubleBackLocs[i];
+            j++;
+         }
+      }
+   }
+    
+   // add hide location if not already present
+   if (!hide && doubleBack) {
+     validLocations[j] = GvGetPlayerLocation(dv->gameView, PLAYER_DRACULA);
+     j++;
+   }
+
+   printf("numValidLocations: %d\n", numValidLocations);
+
+   free(trailMoves);
+   free(trailLocations);
+   free(reachables);
+
+   *numReturnedLocs = numValidLocations;
+   return validLocations;
 }
 
 PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
@@ -325,3 +440,16 @@ PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
+// counts the number of locations in the trail
+int numTrailLocations(int numTrail, PlaceId *trail)
+{
+   // TODO:
+
+   int count = 0;   
+   for (int i = 0; i < numTrail; i++) {
+      if (placeIsReal(trail[i])) {
+         count++;
+      }   
+   }
+   return count;
+}
