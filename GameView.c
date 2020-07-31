@@ -420,6 +420,8 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		
 		int travelRail = (player + round) % 4;
 		
+		printf("Allowed travel distance: %d\n", travelRail);
+		
 		int railStations = 0;
 		PlaceId connRail[NUM_REAL_PLACES];
 		
@@ -435,11 +437,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		int numStationsSec = 0;
 		PlaceId noDupsSec[numStationsSec];
 		
-		// int numStationsThd = 0;
-		// PlaceId noDupsThd[numStationsThd];
-		
+		// Outputs
 		// int numRails = 0;
-		// PlaceId railConnections[numRails];
+		// Placeid railConnections[numRail];
 		
 		if (travelRail == 0 || player == PLAYER_DRACULA) {
 			return connections;
@@ -458,7 +458,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		for (int i = 0; i < railStations; i++) {
 			nearby(europe, connRail[i], connNext, &nextStations, RAIL);
 			for (int j = 0; j < nextStations; j++) {
-				numStations = removeDups(connNext, noDups, j, i);
+				numStations = removeDups(connNext, noDups, j, NUM_REAL_PLACES);
 			}
 		}
 		
@@ -479,23 +479,15 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			printf("%s\n", placeIdToName(noDups[i]));
 		}
 		
+		// Remove duplicates of locations of 3rd stations
 		for (int i = 0; i < nextStations; i++) {
 			nearby(europe, connNext[i], connSec, &secStations, RAIL);
 			for (int j = 0; j < secStations; j++) {
-			bool visited = false;
-				for (int k = 0; k < railStations; k++) {
-					if (connSec[j] == connRail[k]) {
-						visited = true;
-					}
-				}
-				if (!visited) {
-					noDupsSec[numStationsSec] = connSec[j];
-					numStationsSec++;
-				}
+				numStationsSec = removeDups(connSec, noDupsSec, j, NUM_REAL_PLACES);
 			}
 		}
 		
-		/* if (travelRail == 3) {
+		if (travelRail == 3) {
 			for (int i = 0; i < numStationsSec; i++) {
 				bool visited = false;
 				for (int j= 0; j < railStations; j++) {
@@ -509,12 +501,11 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 					}
 				}
 				if (!visited) {
-					noDupsThd[numStationsThd] = noDupsSec[i];
-					numStationsThd++;
+					connections[*numReturnedLocs] = noDupsSec[i];
+					(*numReturnedLocs)++;
 				}
 			}
 		}
-		*/
 		
 		printf("---------------------travel = 3------------------------\n");
 		printf("number of noDups: %d\n", numStations);
@@ -534,14 +525,6 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		for (int i = 0; i < numStationsSec; i++) {
 			printf("%s\n", placeIdToName(noDupsSec[i]));
 		}
-		/*
-		printf("\n");
-		printf("number of noDupsThd: %d\n", numStationsThd);
-		printf ("locations:\n");
-		for (int i = 0; i < numStationsThd; i++) {
-			printf("%s\n", placeIdToName(noDupsThd[i]));
-		}
-		*/
 		printf("-------------------End of debugging---------------------\n");
 		
 	}
