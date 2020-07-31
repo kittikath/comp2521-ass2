@@ -278,19 +278,9 @@ int main(void)
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
 		
-		// debugging
-		printf("number of traps: %d\n", numTraps);
-		
 		assert(numTraps == 2);
+		
 		sortPlaces(traps, numTraps);
-		
-		// debugging
-		for (int i = 0; i < numTraps; i++) {
-			
-			printf("%s\n", placeIdToName(traps[i]));
-			
-		}
-		
 		assert(traps[0] == GALATZ && traps[1] == KLAUSENBURG);
 		free(traps);
 		
@@ -319,18 +309,8 @@ int main(void)
 		int numTraps = 0;
 		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
 		
-		// Debugging
-		printf("number of traps: %d\n", numTraps);
-		
 		assert(numTraps == 2);
 		sortPlaces(traps, numTraps);
-		
-		// debugging
-		for (int i = 0; i < numTraps; i++) {
-			
-			printf("%s\n", placeIdToName(traps[i]));
-			
-		}
 		
 		assert(traps[0] == CONSTANTA && traps[1] == GALATZ);
 		free(traps);
@@ -450,28 +430,13 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, GALATZ, true, false,
 			                                     false, &numLocs);
-			
 			assert(numLocs == 5);
 			sortPlaces(locs, numLocs);
-			
 			assert(locs[0] == BUCHAREST);
 			assert(locs[1] == CASTLE_DRACULA);
 			assert(locs[2] == CONSTANTA);
 			assert(locs[3] == GALATZ);
 			assert(locs[4] == KLAUSENBURG);
-			free(locs);
-		}
-		
-		{
-			printf("\tChecking SZEGED road connections "
-			       "(Dracula, Round 1)\n");
-			int numLocs = -1;
-			PlaceId *locs = GvGetReachableByType(gv, PLAYER_DRACULA,
-			                                     1, SZEGED, true, false,
-			                                     false, &numLocs);
-			                                     
-			sortPlaces(locs, numLocs);
-			
 			free(locs);
 		}
 
@@ -483,9 +448,7 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, IONIAN_SEA, false, false,
 			                                     true, &numLocs);
-			
 			assert(numLocs == 7);
-			
 			sortPlaces(locs, numLocs);
 			assert(locs[0] == ADRIATIC_SEA);
 			assert(locs[1] == ATHENS);
@@ -496,19 +459,6 @@ int main(void)
 			assert(locs[6] == VALONA);
 			free(locs);
 		}
-		
-		{
-			printf("\tChecking Santander road & boat connections "
-			       "(Dracula, Round 1)\n");
-			int numLocs = -1;
-			PlaceId *locs = GvGetReachableByType(gv, PLAYER_DRACULA,
-			                                     1, SANTANDER, true, false,
-			                                     true, &numLocs);
-			
-			sortPlaces(locs, numLocs);
-			
-			free(locs);
-		}
 
 		{
 			printf("\tChecking Paris rail connections "
@@ -517,10 +467,8 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     2, PARIS, false, true,
 			                                     false, &numLocs);
-			
 			assert(numLocs == 7);
 			sortPlaces(locs, numLocs);
-			
 			assert(locs[0] == BORDEAUX);
 			assert(locs[1] == BRUSSELS);
 			assert(locs[2] == COLOGNE);
@@ -528,7 +476,6 @@ int main(void)
 			assert(locs[4] == MARSEILLES);
 			assert(locs[5] == PARIS);
 			assert(locs[6] == SARAGOSSA);
-			
 			free(locs);
 		}
 		
@@ -538,7 +485,6 @@ int main(void)
 			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
 			                                     1, ATHENS, false, true,
 			                                     false, &numLocs);
-			
 			assert(numLocs == 1);
 			assert(locs[0] == ATHENS);
 			free(locs);
@@ -548,30 +494,131 @@ int main(void)
 		printf("Test passed!\n");
 	}
 	
-   {///////////////////////////////////////////////////////////////////
-	   
-	   printf("Test for Dracula's valid moves 2\n");
-	
-			char *trail =
-			"GED.... SGE.... HZU.... MCA.... DCF.V.. "
-			"GMN.... SCFVD.. HGE.... MLS.... DBOT... "
-			"GLO.... SMR.... HCF.... MMA.... DTOT... "
-			"GPL.... SMS.... HMR.... MGR.... DBAT... "
-			"GLO.... SBATD.. HMS.... MMA.... DSRT... "
-			"GPL.... SSJ.... HBA.... MGR.... DALT... "
-			"GPL.... SSJ.... HBA.... MGR.... DMAT... "
-			"GLO.... SBE.... HMS.... MMATD.. ";
+	{///////////////////////////////////////////////////////////////////
+		printf("Extra testing cases\n");
 		
-		Message messages[39] = {};
-		GameView gv = GvNew(trail, messages);
-	   
-	   int numReturnedLocs = - 1;
-	   PlaceId *Reach = GvGetReachable(gv, PLAYER_DRACULA, GvGetRound(gv),
-                        GvGetPlayerLocation(gv, PLAYER_DRACULA), &numReturnedLocs);
-	
-	
-	   assert(Reach != NULL);
-	
+		{	printf("\n");
+		
+			char *trail =
+				"GMN.... SPL.... HAM.... MPA.... DC?.V.. "
+				"GLV.... SLO.... HNS.... MST.... DC?T... " 
+				"GIR.... SPL.... HAO.... MZU.... DCDT... "
+				"GSW.... SLO.... HNS.... MFR.... DC?T... "
+				"GLV.... SPL.... HAO.... MZU.... DC?T... "
+				"GSW.... SLO.... HNS.... ";
+		
+			Message messages[32] = {};
+			GameView gv = GvNew(trail, messages);
+		
+			assert(GvGetRound(gv) == 5);
+			assert(GvGetPlayer(gv) == PLAYER_MINA_HARKER);
+			assert(GvGetScore(gv) == 361);
+			assert(GvGetHealth(gv, PLAYER_DRACULA) == 40);
+			assert(GvGetPlayerLocation(gv, PLAYER_MINA_HARKER) == ZURICH);
+			assert(GvGetVampireLocation(gv) == CITY_UNKNOWN);
+		
+			int numTraps = 0;
+			PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+			assert(numTraps == 4);
+			sortPlaces(traps, numTraps);
+			assert(traps[0] == CASTLE_DRACULA && traps[1] == CITY_UNKNOWN 
+				    && traps[2] == CITY_UNKNOWN && traps[3] == CITY_UNKNOWN);
+			free(traps);
+		
+			int numMoves = 0; bool canFree = false;
+			PlaceId *moves = GvGetMoveHistory(gv, PLAYER_LORD_GODALMING,
+					                               &numMoves, &canFree);
+			assert(numMoves == 6);
+			assert(moves[0] == MANCHESTER);
+			assert(moves[1] == LIVERPOOL);
+			assert(moves[2] == IRISH_SEA);
+			assert(moves[3] == SWANSEA);
+			assert(moves[4] == LIVERPOOL);
+			assert(moves[5] == SWANSEA);
+			if (canFree) free(moves);
+		
+			int numLocs = 0; canFree = false;
+			PlaceId *locs = GvGetLocationHistory(gv, PLAYER_MINA_HARKER,
+					                                  &numLocs, &canFree);
+			assert(numLocs == 5);
+			assert(locs[0] == PARIS);
+			assert(locs[1] == STRASBOURG);
+			assert(locs[2] == ZURICH);
+			assert(locs[3] == FRANKFURT);
+			assert(locs[4] == ZURICH);
+			if (canFree) free(locs);
+		
+			int numReturnedLocs = -1;
+			PlaceId *reach = GvGetReachable(gv, PLAYER_MINA_HARKER, GvGetRound(gv),
+				                             GvGetPlayerLocation(gv, 
+				                             PLAYER_MINA_HARKER), &numReturnedLocs);
+		
+			assert(numReturnedLocs == 6);
+			sortPlaces(reach, numReturnedLocs);
+			assert(reach[0] == GENEVA);
+			assert(reach[1] == MARSEILLES);
+			assert(reach[2] == MILAN);
+			assert(reach[3] == MUNICH);
+			assert(reach[4] == STRASBOURG);
+			assert(reach[5] == ZURICH);
+		
+			free(reach);
+		}
+		
+		{	printf("\n");
+		
+			char *trail =
+				"GED.... SGE.... HZU.... MCA.... DCF.V.. "
+				"GMN.... SCFVD.. HGE.... MLS.... DBOT... "
+				"GLO.... SMR.... HCF.... MMA.... DTOT... "
+				"GPL.... SMS.... HMR.... MGR.... DBAT... "
+				"GLO.... SBATD.. HMS.... MMA.... DSRT... "
+				"GPL.... SSJ.... HBA.... MGR.... DALT... "
+				"GPL.... SSJ.... HBA.... MGR.... DMAT... "
+				"GLO.... SBE.... HMS.... MMATD.. ";
+		
+			Message messages[32] = {};
+			GameView gv = GvNew(trail, messages);
+		
+			assert(GvGetRound(gv) == 7);
+			assert(GvGetPlayer(gv) == PLAYER_DRACULA);
+			
+			assert(GvGetScore(gv) == 353);
+			assert(GvGetHealth(gv, PLAYER_DRACULA) == 10);
+			assert(GvGetPlayerLocation(gv, PLAYER_MINA_HARKER) == MADRID);
+		
+			int numTraps = 0;
+			PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		
+			assert(numTraps == 4);
+			sortPlaces(traps, numTraps);
+			assert(traps[0] == ALICANTE && traps[1] == BORDEAUX 
+				    && traps[2] == SARAGOSSA && traps[3] == TOULOUSE);
+			free(traps);
+		
+			int numReturnedLocs = -1;
+			PlaceId *reach = GvGetReachable(gv, PLAYER_MINA_HARKER, GvGetRound(gv),
+				                             GvGetPlayerLocation(gv, 
+				                             PLAYER_MINA_HARKER), &numReturnedLocs);
+		
+			assert(numReturnedLocs == 9);
+			sortPlaces(reach, numReturnedLocs);
+			assert(reach[0] == ALICANTE);
+			assert(reach[1] == BARCELONA);
+			assert(reach[2] == BORDEAUX);
+			assert(reach[3] == CADIZ);
+			assert(reach[4] == GRANADA);
+			assert(reach[5] == LISBON);
+			assert(reach[6] == MADRID);
+			assert(reach[7] == SANTANDER);
+			assert(reach[8] == SARAGOSSA);
+		
+			free(reach);
+		}
+		
+		printf("Extra tests passed!\n");
+		
 	}
 
 	return EXIT_SUCCESS;
